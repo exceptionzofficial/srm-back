@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getEmployees } from '../../services/api';
-import { FiFileText, FiCheck, FiX, FiExternalLink, FiSearch, FiAlertCircle } from 'react-icons/fi';
+import { FiFileText, FiCheck, FiX, FiExternalLink, FiSearch, FiAlertCircle, FiShield, FiUsers, FiClock } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 
 const LegalDashboard = () => {
     const [employees, setEmployees] = useState([]);
@@ -12,6 +13,7 @@ const LegalDashboard = () => {
     }, []);
 
     const loadData = async () => {
+        setLoading(true);
         try {
             const res = await getEmployees();
             setEmployees(res.employees || []);
@@ -28,10 +30,14 @@ const LegalDashboard = () => {
     );
 
     const renderDocStatus = (url, label) => {
-        if (!url) return <span className="text-gray-400 text-xs flex items-center gap-1"><FiX className="text-red-400" /> Missing</span>;
+        if (!url) return (
+            <span className="badge badge-danger" style={{ fontSize: '10px' }}>
+                <FiX size={10} style={{ marginRight: '4px' }} /> Missing
+            </span>
+        );
         return (
-            <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1 font-medium bg-blue-50 px-2 py-1 rounded">
-                <FiFileText /> {label} <FiExternalLink className="w-3 h-3" />
+            <a href={url} target="_blank" rel="noopener noreferrer" className="badge badge-success" style={{ textDecoration: 'none', cursor: 'pointer', fontSize: '10px' }}>
+                <FiFileText size={10} style={{ marginRight: '4px' }} /> {label} <FiExternalLink size={10} style={{ marginLeft: '4px', opacity: 0.5 }} />
             </a>
         );
     };
@@ -43,93 +49,113 @@ const LegalDashboard = () => {
         if (docs.panUrl) count++;
         if (docs.marksheetUrl) count++;
         if (docs.licenseUrl) count++;
-        // Photo is less critical for "Legal" compliance usually, but good to have
         return count;
     };
 
-    return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6 text-gray-800">Legal Department (CLO) - Reference Check</h1>
+    const pendingCount = employees.filter(e => getDocCount(e) < 4).length;
+    const complianceRate = employees.length ? Math.round((employees.filter(e => getDocCount(e) >= 4).length / employees.length) * 100) : 0;
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Total Employees</h3>
-                    <p className="text-3xl font-bold text-gray-900">{employees.length}</p>
+    return (
+        <div className="dashboard-container" style={{ padding: '0' }}>
+            <div className="page-header" style={{ marginBottom: '40px' }}>
+                <div>
+                    <h1 className="page-title" style={{ fontSize: '32px', fontWeight: 800 }}>Legal Compliance</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontWeight: 600, marginTop: '4px' }}>Chief Legal Officer • Document Verification</p>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Documents Pending</h3>
-                    <p className="text-3xl font-bold text-orange-600">
-                        {employees.filter(e => getDocCount(e) < 4).length}
-                    </p>
-                </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Compliance Rate</h3>
-                    <p className="text-3xl font-bold text-green-600">
-                        {employees.length ? Math.round((employees.filter(e => getDocCount(e) >= 4).length / employees.length) * 100) : 0}%
-                    </p>
+                <div className="badge badge-success" style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--text-main)', color: 'white' }}>
+                    <FiShield style={{ color: '#3b82f6' }} />
+                    Audit Ready
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h2 className="text-lg font-semibold text-gray-800">Employee Documents</h2>
-                    <div className="relative w-full md:w-64">
-                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <div className="stats-grid">
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: '#f8fafc', color: 'var(--text-main)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                        <FiUsers size={24} />
+                    </div>
+                    <div className="stat-value">{employees.length}</div>
+                    <div className="stat-label">Total Workforce</div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: '#fffbeb', color: 'var(--warning)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                        <FiClock size={24} />
+                    </div>
+                    <div className="stat-value">{pendingCount}</div>
+                    <div className="stat-label">Pending Verification</div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: '#ecfdf5', color: 'var(--success)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                        <FiShield size={24} />
+                    </div>
+                    <div className="stat-value">{complianceRate}%</div>
+                    <div className="stat-label">Compliance Rate</div>
+                </div>
+            </div>
+
+            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                <div className="card-header" style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Employee Documentation</h2>
+                    <div className="search-box" style={{ position: 'relative', width: '320px' }}>
+                        <FiSearch style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                         <input
                             type="text"
-                            placeholder="Search employee..."
-                            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Find employee..."
+                            className="form-input"
+                            style={{ paddingLeft: '40px' }}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
 
-                {loading ? <div className="p-8 text-center text-gray-500">Loading data...</div> : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-gray-50 text-gray-600 text-sm">
+                <div className="table-container" style={{ border: 'none' }}>
+                    {loading ? (
+                        <div className="loading-container" style={{ minHeight: '300px' }}>
+                            <div className="spinner"></div>
+                        </div>
+                    ) : (
+                        <table className="table">
+                            <thead>
                                 <tr>
-                                    <th className="p-4 font-medium">Employee</th>
-                                    <th className="p-4 font-medium">Aadhar Card</th>
-                                    <th className="p-4 font-medium">PAN Card</th>
-                                    <th className="p-4 font-medium">Education</th>
-                                    <th className="p-4 font-medium">License/Passport</th>
-                                    <th className="p-4 font-medium">Status</th>
+                                    <th>Employee Profile</th>
+                                    <th style={{ textAlign: 'center' }}>Aadhar</th>
+                                    <th style={{ textAlign: 'center' }}>PAN</th>
+                                    <th style={{ textAlign: 'center' }}>Credentials</th>
+                                    <th style={{ textAlign: 'center' }}>ID Proof</th>
+                                    <th style={{ textAlign: 'right' }}>Audit Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody>
                                 {filteredEmployees.length === 0 ? (
-                                    <tr><td colSpan="6" className="p-8 text-center text-gray-500">No employees found</td></tr>
+                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No records found</td></tr>
                                 ) : filteredEmployees.map(emp => (
-                                    <tr key={emp.employeeId} className="hover:bg-gray-50 transition-colors">
-                                        <td className="p-4">
-                                            <div className="font-medium text-gray-900">{emp.name}</div>
-                                            <div className="text-xs text-gray-500">{emp.employeeId}</div>
-                                            <div className="text-xs text-gray-400">{emp.designation}</div>
+                                    <tr key={emp.employeeId}>
+                                        <td>
+                                            <div style={{ fontWeight: 800 }}>{emp.name}</div>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{emp.employeeId} • {emp.designation}</div>
                                         </td>
-                                        <td className="p-4">
+                                        <td style={{ textAlign: 'center' }}>
                                             {renderDocStatus(emp.documents?.aadharUrl, "Aadhar")}
-                                            {emp.documents?.aadharUrl && <div className="text-[10px] text-gray-400 mt-1">{emp.statutoryDetails?.aadharNumber || "No No."}</div>}
                                         </td>
-                                        <td className="p-4">
+                                        <td style={{ textAlign: 'center' }}>
                                             {renderDocStatus(emp.documents?.panUrl, "PAN")}
-                                            {emp.documents?.panUrl && <div className="text-[10px] text-gray-400 mt-1">{emp.statutoryDetails?.panNumber || "No No."}</div>}
                                         </td>
-                                        <td className="p-4">
-                                            {renderDocStatus(emp.documents?.marksheetUrl, "Cert")}
+                                        <td style={{ textAlign: 'center' }}>
+                                            {renderDocStatus(emp.documents?.marksheetUrl, "Education")}
                                         </td>
-                                        <td className="p-4">
-                                            {renderDocStatus(emp.documents?.licenseUrl, "ID")}
+                                        <td style={{ textAlign: 'center' }}>
+                                            {renderDocStatus(emp.documents?.licenseUrl, "Secondary")}
                                         </td>
-                                        <td className="p-4">
+                                        <td style={{ textAlign: 'right' }}>
                                             {getDocCount(emp) >= 4 ? (
-                                                <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                                                    <FiCheck className="w-3 h-3" /> Complete
+                                                <span className="badge badge-success" style={{ padding: '6px 12px' }}>
+                                                    <FiCheck size={12} style={{ marginRight: '4px' }} /> Verified
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
-                                                    <FiAlertCircle className="w-3 h-3" /> Incomplete
+                                                <span className="badge badge-warning" style={{ padding: '6px 12px' }}>
+                                                    <FiAlertCircle size={12} style={{ marginRight: '4px' }} /> Action Req
                                                 </span>
                                             )}
                                         </td>
@@ -137,8 +163,8 @@ const LegalDashboard = () => {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );

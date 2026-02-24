@@ -111,32 +111,20 @@ const PayGroups = () => {
     );
 
     return (
-        <div style={{ padding: '24px', maxWidth: '1280px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+        <div className="pay-groups-page">
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <div className="page-header">
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', background: 'linear-gradient(to right, #111827, #4B5563)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
-                        Pay Groups
-                    </h1>
-                    <p style={{ color: '#6B7280', marginTop: '4px', fontSize: '14px' }}>Manage payroll groups and entities</p>
+                    <h1 className="page-title">Pay Groups</h1>
+                    <p className="text-secondary" style={{ marginTop: '4px', fontSize: '14px' }}>
+                        Manage payroll groups and entities
+                    </p>
                 </div>
                 <button
+                    className="btn btn-primary"
                     onClick={() => {
                         resetForm();
                         setShowModal(true);
-                    }}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 20px',
-                        backgroundColor: '#000',
-                        color: '#fff',
-                        borderRadius: '12px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontWeight: 500,
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                     }}
                 >
                     <PlusIcon style={{ width: '20px', height: '20px' }} />
@@ -145,103 +133,85 @@ const PayGroups = () => {
             </div>
 
             {/* Search Bar */}
-            <div style={{ position: 'relative', marginBottom: '32px' }}>
-                <MagnifyingGlassIcon style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#9CA3AF' }} />
-                <input
-                    type="text"
-                    placeholder="Search pay groups..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{
-                        width: '100%',
-                        padding: '12px 16px 12px 40px',
-                        borderRadius: '12px',
-                        border: '1px solid #F3F4F6',
-                        fontSize: '16px',
-                        outline: 'none',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                        boxSizing: 'border-box'
-                    }}
-                />
+            <div className="card" style={{ marginBottom: '32px', padding: '12px' }}>
+                <div style={{ position: 'relative' }}>
+                    <MagnifyingGlassIcon style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#9CA3AF' }} />
+                    <input
+                        type="text"
+                        placeholder="Search pay groups..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="form-input"
+                        style={{ paddingLeft: '40px' }}
+                    />
+                </div>
             </div>
 
-            {/* Content - List View */}
+            {/* Content - Table View */}
             {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', borderBottom: '2px solid #000', animation: 'spin 1s linear infinite' }} />
+                <div className="loading-container">
+                    <div className="spinner"></div>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <AnimatePresence>
-                        {filteredGroups.map((group) => (
-                            <motion.div
-                                key={group.payGroupId}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                style={{
-                                    backgroundColor: '#fff',
-                                    borderRadius: '16px',
-                                    border: '1px solid #F3F4F6',
-                                    padding: '16px 24px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                                    transition: 'box-shadow 0.2s',
-                                    gap: '24px'
-                                }}
-                                whileHover={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-                                    <div style={{ padding: '10px', backgroundColor: '#F9FAFB', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <BuildingOffice2Icon style={{ width: '24px', height: '24px', color: '#4B5563' }} />
-                                    </div>
-                                    <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 2px 0' }}>{group.name}</h3>
-                                        {group.description && (
-                                            <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
-                                                {group.description}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                                    <span style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        padding: '4px 12px',
-                                        borderRadius: '9999px',
-                                        fontSize: '12px',
-                                        fontWeight: '500',
-                                        backgroundColor: group.isActive ? '#DCFCE7' : '#FEE2E2',
-                                        color: group.isActive ? '#15803D' : '#B91C1C'
-                                    }}>
-                                        {group.isActive ? 'Active' : 'Inactive'}
-                                    </span>
-
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button
-                                            onClick={() => openEditModal(group)}
-                                            style={{ padding: '8px', color: '#2563EB', background: '#EFF6FF', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'background-color 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                            title="Edit"
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Group Name</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <AnimatePresence mode='popLayout'>
+                                    {filteredGroups.map((group) => (
+                                        <motion.tr
+                                            key={group.payGroupId}
+                                            layout
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
                                         >
-                                            <FiEdit2 style={{ width: '18px', height: '18px' }} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(group.payGroupId)}
-                                            style={{ padding: '8px', color: '#DC2626', background: '#FEF2F2', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'background-color 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                            title="Delete"
-                                        >
-                                            <FiTrash2 style={{ width: '18px', height: '18px' }} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div style={{ padding: '8px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
+                                                        <BuildingOffice2Icon style={{ width: '20px', height: '20px', color: '#4B5563' }} />
+                                                    </div>
+                                                    <span style={{ fontWeight: 600 }}>{group.name}</span>
+                                                </div>
+                                            </td>
+                                            <td>{group.description || <span className="text-secondary">-</span>}</td>
+                                            <td>
+                                                <span className={`badge ${group.isActive ? 'badge-success' : 'badge-danger'}`}>
+                                                    {group.isActive ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        className="action-btn edit"
+                                                        onClick={() => openEditModal(group)}
+                                                        title="Edit"
+                                                    >
+                                                        <FiEdit2 />
+                                                    </button>
+                                                    <button
+                                                        className="action-btn delete"
+                                                        onClick={() => handleDelete(group.payGroupId)}
+                                                        title="Delete"
+                                                    >
+                                                        <FiTrash2 />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                </AnimatePresence>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 

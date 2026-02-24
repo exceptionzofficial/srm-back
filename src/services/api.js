@@ -111,6 +111,11 @@ export const getAttendanceByDate = async (date) => {
     return response.data;
 };
 
+export const getAttendanceReport = async (params) => {
+    const response = await api.get('/api/attendance/report', { params });
+    return response.data;
+};
+
 export const getAttendanceCalendar = async (employeeId, month, year) => {
     const response = await api.get(`/api/attendance/calendar/${employeeId}?month=${month}&year=${year}`);
     return response.data;

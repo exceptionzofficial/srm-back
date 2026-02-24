@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FiSend, FiMessageSquare, FiBarChart2, FiX, FiPlus, FiImage, FiPaperclip, FiCheckCircle, FiClock, FiUser, FiUsers, FiUserPlus, FiArrowDown, FiSearch } from 'react-icons/fi';
 import { getMessages, sendMessage, markMessageAsRead, votePoll, updateGroup, getEmployees } from '../services/api';
 import './ChatWindow.css';
+import srmLogo from '../assets/srm-logo.png';
 
 const ChatWindow = ({ group, currentUser }) => {
     const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'tasks', or 'members'
@@ -374,7 +375,7 @@ const ChatWindow = ({ group, currentUser }) => {
         return (
             <div className="chat-window empty">
                 <div className="empty-chat">
-                    <FiMessageSquare />
+                    <img src={srmLogo} alt="SRM Sweets" className="empty-chat-logo" />
                     <h3>Select a group to start chatting</h3>
                     <p>Choose a group from the list on the left</p>
                 </div>
@@ -386,9 +387,28 @@ const ChatWindow = ({ group, currentUser }) => {
         <div className="chat-window">
             <div className="chat-header">
                 <div className="header-top">
-                    <div className="header-info">
-                        <h3>{group.name}</h3>
-                        <span>{group.members?.length} members</span>
+                    <div className="header-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {(group.name.toLowerCase().includes('srm') || group.name.toLowerCase().includes('test')) ? (
+                            <img src="/srm-logo.png" alt="Logo" style={{ height: '40px', width: '40px', objectFit: 'contain' }} />
+                        ) : (
+                            <div className="group-avatar-sm" style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '10px',
+                                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: '700'
+                            }}>
+                                {group.name.substring(0, 2).toUpperCase()}
+                            </div>
+                        )}
+                        <div>
+                            <h3 style={{ margin: 0 }}>{group.name}</h3>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{group.members?.length} members</span>
+                        </div>
                     </div>
                     {group.task && (
                         <div className="pinned-task">

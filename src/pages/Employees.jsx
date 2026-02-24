@@ -93,9 +93,12 @@ const Employees = () => {
             {success && <div className="alert alert-success">{success}</div>}
             {error && <div className="alert alert-danger">{error}</div>}
 
-            <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📱 Mobile App Employees ({mobileEmployees.length})
-            </h2>
+            <div className="section-header" style={{ marginTop: '24px' }}>
+                <h2 className="section-title">
+                    📱 Mobile App Employees
+                </h2>
+                <span className="branch-count-badge">{mobileEmployees.length}</span>
+            </div>
             <div className="card">
                 {mobileEmployees.length > 0 ? (
                     <div className="table-container">
@@ -144,7 +147,7 @@ const Employees = () => {
                                             </span>
                                         </td>
                                         <td>
-                                            <span className="badge badge-secondary" style={{ background: '#e2e8f0', color: '#475569' }}>
+                                            <span className="badge badge-secondary">
                                                 {emp.addedBy || 'N/A'}
                                             </span>
                                         </td>
@@ -169,9 +172,12 @@ const Employees = () => {
                 )}
             </div>
 
-            <h2 className="section-title" style={{ marginTop: '30px', marginBottom: '10px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🖥️ Kiosk / Common Employees ({kioskEmployees.length})
-            </h2>
+            <div className="section-header" style={{ marginTop: '32px' }}>
+                <h2 className="section-title">
+                    🖥️ Kiosk / Common Employees
+                </h2>
+                <span className="branch-count-badge">{kioskEmployees.length}</span>
+            </div>
             <div className="card">
                 {kioskEmployees.length > 0 ? (
                     <div className="table-container">
@@ -213,7 +219,7 @@ const Employees = () => {
                                             </span>
                                         </td>
                                         <td>
-                                            <span className="badge badge-secondary" style={{ background: '#e2e8f0', color: '#475569' }}>
+                                            <span className="badge badge-secondary">
                                                 {emp.addedBy || 'N/A'}
                                             </span>
                                         </td>

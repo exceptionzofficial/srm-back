@@ -71,68 +71,76 @@ const Requests = () => {
             </div>
 
             {loading ? (
-                <p>Loading requests...</p>
+                <div className="loading-container">
+                    <div className="spinner"></div>
+                </div>
             ) : requests.length === 0 ? (
                 <div className="empty-state">No requests found for this filter.</div>
             ) : (
-                <div className="requests-grid">
-                    {requests.map((req) => (
-                        <div key={req.requestId} className={`request-card type-${req.type.toLowerCase()}`}>
-                            <div className="card-header">
-                                <span className={`request-badge badge-${req.type.toLowerCase()}`}>
-                                    {req.type}
-                                </span>
-                                <span className={`status-badge status-${req.status.toLowerCase()}`}>
-                                    {req.status}
-                                </span>
-                            </div>
-
-                            <div className="employee-info">
-                                <h3>{req.employeeName || req.employeeId}</h3>
-                                <div className="employee-meta">
-                                    <span>{req.department}</span>
-                                    {req.branchId && (
-                                        <>
-                                            <span>•</span>
-                                            <span>{req.branchId}</span>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="detail-box">
-                                {req.type === 'ADVANCE' && (
-                                    <div className="detail-row">
-                                        <span className="label">Amount</span>
-                                        <span className="value">₹{req.data?.amount}</span>
-                                    </div>
-                                )}
-                                {(req.type === 'LEAVE' || req.type === 'PERMISSION') && (
-                                    <>
-                                        <div className="detail-row">
-                                            <span className="label">Date</span>
-                                            <span className="value">{req.data?.date}</span>
-                                        </div>
-                                        <div className="detail-row">
-                                            <span className="label">Reason</span>
-                                            <span className="value">{req.data?.reason}</span>
-                                        </div>
-                                        {req.type === 'PERMISSION' && (
-                                            <div className="detail-row">
-                                                <span className="label">Duration</span>
-                                                <span className="value">{req.data?.duration} mins</span>
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Employee</th>
+                                    <th>Branch / Dept</th>
+                                    <th>Details</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {requests.map((req) => (
+                                    <tr key={req.requestId}>
+                                        <td>
+                                            <span className={`badge badge-${req.type?.toLowerCase()}`} style={{ fontWeight: 800 }}>
+                                                {req.type}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontWeight: 600 }}>{req.employeeName || req.employeeId}</div>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>ID: {req.employeeId}</div>
+                                        </td>
+                                        <td>
+                                            <div>{req.department}</div>
+                                            {req.branchId && <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{req.branchId}</div>}
+                                        </td>
+                                        <td>
+                                            <div className="request-details-cell" style={{ fontSize: '13px' }}>
+                                                {req.type === 'ADVANCE' && (
+                                                    <div style={{ fontWeight: 700, color: 'var(--primary)' }}>Amount: ₹{req.data?.amount}</div>
+                                                )}
+                                                {(req.type === 'LEAVE' || req.type === 'PERMISSION') && (
+                                                    <div>
+                                                        <strong>{req.data?.date}</strong>: {req.data?.reason}
+                                                        {req.type === 'PERMISSION' && (
+                                                            <div style={{ color: 'var(--text-secondary)' }}>Duration: {req.data?.duration} mins</div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {req.type === 'BRANCH_TRAVEL' && (
+                                                    <div>
+                                                        <strong>{req.data?.branchName}</strong> | {req.data?.startDate}
+                                                        <div style={{ color: 'var(--text-secondary)' }}>{req.data?.reason}</div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-
-                            <div className="card-footer">
-                                <span>Requested: {new Date(req.createdAt).toLocaleDateString()}</span>
-                                {req.hrActionBy && <span>Action by HR</span>}
-                            </div>
-                        </div>
-                    ))}
+                                        </td>
+                                        <td>
+                                            <span className={`badge status-${req.status?.toLowerCase()}`}>
+                                                {req.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontSize: '13px' }}>{new Date(req.createdAt).toLocaleDateString()}</div>
+                                            {req.hrActionBy && <div className="text-secondary" style={{ fontSize: '11px' }}>Action by HR</div>}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

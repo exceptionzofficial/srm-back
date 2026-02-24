@@ -638,7 +638,7 @@ const Branches = () => {
                                     <div className="form-group">
                                         <label className="form-label">Branch Type *</label>
                                         <select
-                                            className="form-input form-select"
+                                            className="form-input"
                                             value={formData.branchType}
                                             onChange={(e) => setFormData({ ...formData, branchType: e.target.value })}
                                         >
@@ -712,11 +712,12 @@ const Branches = () => {
                                     </div>
 
                                     <div className="form-group">
-                                        <label className="form-checkbox">
+                                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                                             <input
                                                 type="checkbox"
                                                 checked={formData.isActive}
                                                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                                style={{ width: '18px', height: '18px' }}
                                             />
                                             <span>Active Branch</span>
                                         </label>
@@ -724,7 +725,8 @@ const Branches = () => {
                                 </div>
 
                                 <div className="map-section">
-                                    <p className="map-hint">👆 Click on the map to select location</p>
+                                    <div className="map-hint">👆 Click on the map to select location</div>
+                                    <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: '400px' }}></div>
                                 </div>
                             </div>
 

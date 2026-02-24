@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiChevronLeft, FiChevronRight, FiArrowLeft } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiArrowLeft, FiClock, FiX, FiUser } from 'react-icons/fi';
 import { getEmployeeById, getAttendanceCalendar, getRequestsByEmployee } from '../services/api';
 import './AttendanceView.css';
 
@@ -110,15 +110,21 @@ const AttendanceView = () => {
 
     return (
         <div className="attendance-view-page">
-            <div className="page-header" style={{ marginBottom: '20px' }}>
-                <button onClick={() => navigate(-1)} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="page-header" style={{ marginBottom: '32px' }}>
+                <button onClick={() => navigate(-1)} className="btn btn-secondary">
                     <FiArrowLeft /> Back to Employees
                 </button>
-                <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    {employee?.photoUrl && <img src={employee.photoUrl} alt="" className="emp-thumb" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />}
+                <div className="employee-info-header" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    {employee?.photoUrl ? (
+                        <img src={employee.photoUrl} alt="" className="emp-thumb" />
+                    ) : (
+                        <div className="emp-thumb-placeholder" style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#f8fafc', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <FiUser size={24} color="var(--text-secondary)" />
+                        </div>
+                    )}
                     <div>
-                        <h1 className="page-title" style={{ margin: 0, fontSize: '24px' }}>{employee?.name || employee?.fullName}'s Attendance</h1>
-                        <p className="text-muted">{employee?.employeeId} | {employee?.designation}</p>
+                        <h1 className="page-title" style={{ margin: 0, fontSize: '28px', fontWeight: 800 }}>{employee?.name || employee?.fullName}</h1>
+                        <p className="text-muted" style={{ margin: '4px 0 0 0', fontWeight: 600 }}>{employee?.employeeId} • {employee?.designation}</p>
                     </div>
                 </div>
             </div>
@@ -172,6 +178,17 @@ const AttendanceView = () => {
                                     </span>
                                 )}
                             </button>
+                            <button
+                                className={`apply-btn travel ${activeRequestTab === 'BRANCH_TRAVEL' ? 'active' : ''}`}
+                                onClick={() => setActiveRequestTab(activeRequestTab === 'BRANCH_TRAVEL' ? null : 'BRANCH_TRAVEL')}
+                            >
+                                Travel
+                                {requests.filter(r => r.type === 'BRANCH_TRAVEL' && r.status === 'Pending').length > 0 && (
+                                    <span className="req-badge">
+                                        {requests.filter(r => r.type === 'BRANCH_TRAVEL' && r.status === 'Pending').length}
+                                    </span>
+                                )}
+                            </button>
                         </div>
 
                         {activeRequestTab && (
@@ -191,6 +208,7 @@ const AttendanceView = () => {
                                                 {activeRequestTab === 'ADVANCE' && <div>Amount: ₹{req.data.amount}</div>}
                                                 {activeRequestTab === 'LEAVE' && <div>Type: {req.data.leaveType}</div>}
                                                 {activeRequestTab === 'PERMISSION' && <div>Time: {req.data.startTime} - {req.data.endTime}</div>}
+                                                {activeRequestTab === 'BRANCH_TRAVEL' && <div>Branch: {req.data.branchName} | {req.data.startDate}</div>}
                                                 <div className="req-reason">{req.data.reason}</div>
                                             </div>
                                         </div>
@@ -204,24 +222,6 @@ const AttendanceView = () => {
 
                     <div className="monthly-details">
                         <h3 className="section-title">Monthly Details</h3>
-
-                        <div className="shortfall-table">
-                            <div className="sf-header">Short fall</div>
-                            <div className="sf-grid">
-                                <div>
-                                    <label>ExcessStay</label>
-                                    <div className="sf-val green">00:48</div>
-                                </div>
-                                <div>
-                                    <label>Shortfall</label>
-                                    <div className="sf-val red">00:00</div>
-                                </div>
-                                <div>
-                                    <label>Difference</label>
-                                    <div className="sf-val blue">00:48</div>
-                                </div>
-                            </div>
-                        </div>
 
                         <div className="balance-table-container">
                             <h4 className="table-header-title">Leave Details</h4>
@@ -239,7 +239,7 @@ const AttendanceView = () => {
                                     {(employee?.leaveBalances || [
                                         { type: 'Medical Leave', opening: 2, credit: 0, used: 0, balance: 2 },
                                         { type: 'Casual Leave', opening: 2, credit: 0, used: 0, balance: 2 },
-                                    ]).filter(l => l.type !== 'Spell Leave').map((l, i) => (
+                                    ]).filter(l => l.type !== 'Spell Leave').slice(0, 2).map((l, i) => (
                                         <tr key={i}>
                                             <td>{l.type}</td>
                                             <td>{l.opening}</td>
@@ -262,30 +262,51 @@ const AttendanceView = () => {
                 <div className="attendance-modal-overlay" onClick={() => setSelectedDay(null)}>
                     <div className="attendance-modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>{new Date(selectedDay.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
-                            <button className="close-btn" onClick={() => setSelectedDay(null)}>&times;</button>
+                            <div className="header-date">
+                                <FiClock className="header-icon" />
+                                <h3>{new Date(selectedDay.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+                            </div>
+                            <button className="close-btn" onClick={() => setSelectedDay(null)}>
+                                <FiX />
+                            </button>
                         </div>
                         <div className="modal-body">
                             {selectedDay.details ? (
                                 <>
                                     <div className="detail-times-grid">
                                         <div className="time-box">
-                                            <span className="label">Check In</span>
-                                            <span className="value in-time">{selectedDay.details.checkIn}</span>
+                                            <div className="time-icon check-in">
+                                                <FiClock />
+                                            </div>
+                                            <div className="time-info">
+                                                <span className="label">Check In</span>
+                                                <span className="value">{selectedDay.details.checkIn}</span>
+                                            </div>
                                         </div>
                                         <div className="time-box">
-                                            <span className="label">Check Out</span>
-                                            <span className="value out-time">{selectedDay.details.checkOut}</span>
+                                            <div className="time-icon check-out">
+                                                <FiClock />
+                                            </div>
+                                            <div className="time-info">
+                                                <span className="label">Check Out</span>
+                                                <span className="value">{selectedDay.details.checkOut}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="duration-banner">
-                                        <span className="icon">⏱</span>
-                                        <span>Total Work Time: <strong>{selectedDay.details.duration}</strong></span>
+                                    <div className="modal-summary-card">
+                                        <div className="summary-icon">
+                                            <FiClock />
+                                        </div>
+                                        <div className="summary-content">
+                                            <span className="summary-label">Total Work Time</span>
+                                            <span className="summary-value">{selectedDay.details.duration}</span>
+                                        </div>
                                     </div>
                                 </>
                             ) : (
-                                <div className="no-data-msg">
-                                    No working hours recorded for this day.
+                                <div className="no-data-card">
+                                    <FiClock className="no-data-icon" />
+                                    <p>No working hours recorded for this day</p>
                                 </div>
                             )}
 

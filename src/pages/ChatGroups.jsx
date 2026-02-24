@@ -211,8 +211,9 @@ const ChatGroups = () => {
         <div className="chat-page-container">
             <div className="groups-sidebar">
                 <div className="sidebar-header">
-                    <div className="header-left">
-                        <h1>Chat Groups</h1>
+                    <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <img src="/srm-logo.png" alt="Logo" style={{ height: '32px', width: '32px', objectFit: 'contain' }} />
+                        <h1 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Chat Groups</h1>
                     </div>
                     <button className="btn-icon" onClick={() => setShowModal(true)} title="New Group">
                         <FiPlus />
@@ -236,8 +237,8 @@ const ChatGroups = () => {
                                     className={`group-item ${isSelected ? 'active' : ''}`}
                                     onClick={() => handleGroupSelect(group)}
                                 >
-                                    <div className="group-avatar">
-                                        {group.name.substring(0, 2).toUpperCase()}
+                                    <div className="group-avatar" style={{ background: '#f8f9fa', border: '1px solid var(--border)', boxShadow: 'none' }}>
+                                        <img src="/srm-logo.png" alt="SRM" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
                                     </div>
                                     <div className="group-content">
                                         <div className="group-name-row">

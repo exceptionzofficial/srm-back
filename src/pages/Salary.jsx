@@ -3,6 +3,11 @@ import { useState, useEffect } from 'react';
 import { FiPlus, FiUser, FiEdit2, FiSearch } from 'react-icons/fi';
 import { getEmployees, createSalary, getSalaries, updateSalary } from '../services/api';
 
+const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 const Salary = () => {
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -235,87 +240,79 @@ const Salary = () => {
     if (!selectedEmployee) {
         return (
             <div className="salary-page">
-                <div className="page-header" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                    <h1 className="page-title" style={{ margin: 0 }}>Salary Management</h1>
-
-                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div className="page-header">
+                    <h1 className="page-title">Salary Management</h1>
+                    <div className="header-actions">
                         {/* Role Filter */}
                         <select
+                            className="form-input"
                             value={selectedRole}
                             onChange={(e) => setSelectedRole(e.target.value)}
-                            style={{
-                                padding: '8px 12px',
-                                border: '1px solid var(--border)',
-                                borderRadius: '4px',
-                                fontSize: '14px',
-                                background: 'white',
-                                outline: 'none',
-                                minWidth: '150px'
-                            }}
+                            style={{ width: '200px' }}
                         >
-                            <option value="All" disabled>Filter by Role</option>
+                            <option value="All">All Roles</option>
                             {roles.map(role => (
                                 <option key={role} value={role}>{role}</option>
                             ))}
                         </select>
 
                         {/* Search Bar */}
-                        <div style={{ background: 'white', padding: '8px 12px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', width: '300px', borderRadius: '4px' }}>
-                            <FiSearch style={{ marginRight: '8px', color: 'var(--text-muted)' }} />
-                            <input
-                                type="text"
-                                placeholder="Search by Name or ID..."
-                                style={{ border: 'none', outline: 'none', fontSize: '14px', width: '100%', background: 'transparent' }}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        <div className="card" style={{ padding: '8px', minWidth: '300px' }}>
+                            <div style={{ position: 'relative' }}>
+                                <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Search by name or ID..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{ paddingLeft: '36px', border: 'none', background: 'transparent' }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className="card" style={{ padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
-                        {filteredEmployees.map(emp => (
-                            <div key={emp.employeeId}
-                                className="stat-card"
-                                style={{
-                                    cursor: 'pointer',
-                                    padding: '24px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '16px',
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border)',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-                                }}
-                                onClick={() => handleEmployeeSelect(emp)}
-                                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <div style={{ background: 'rgba(239, 65, 54, 0.08)', padding: '14px', borderRadius: '50%', color: 'var(--primary)' }}>
-                                        <FiUser size={24} />
-                                    </div>
-                                    <div>
-                                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{emp.name}</h3>
-                                        <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>{emp.designation || 'Staff'}</p>
-                                    </div>
-                                </div>
-                                <div style={{ background: '#F9FAFB', padding: '12px', borderRadius: '4px', border: '1px solid #F3F4F6', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600, fontSize: '10px' }}>Employee ID</span>
-                                        <span style={{ fontFamily: 'monospace', fontWeight: '700', color: '#000', background: 'white', padding: '2px 6px', borderRadius: '3px', border: '1px solid #e5e7eb', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={emp.employeeId}>
-                                            {emp.employeeId}
-                                        </span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600, fontSize: '10px' }}>Branch ID</span>
-                                        <span className="badge badge-secondary" style={{ fontSize: '11px' }}>{emp.branchId || 'N/A'}</span>
-                                    </div>
-                                </div>
-                                <button className="btn btn-secondary" style={{ width: '100%', marginTop: 'auto', justifyContent: 'center' }}>Manage Salary</button>
-                            </div>
-                        ))}
+
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Employee ID</th>
+                                    <th>Designation</th>
+                                    <th>Branch</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredEmployees.map(emp => (
+                                    <tr key={emp.employeeId}>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                                                    <FiUser size={16} />
+                                                </div>
+                                                <span style={{ fontWeight: 600 }}>{emp.name}</span>
+                                            </div>
+                                        </td>
+                                        <td><code>{emp.employeeId}</code></td>
+                                        <td>
+                                            <span className="badge badge-secondary">{emp.designation || 'Staff'}</span>
+                                        </td>
+                                        <td>{emp.branchId || <span className="text-secondary">N/A</span>}</td>
+                                        <td>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => handleEmployeeSelect(emp)}
+                                            >
+                                                Manage Salary
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -325,15 +322,19 @@ const Salary = () => {
     // View: Employee Salary Details
     return (
         <div className="salary-details-page">
-            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <button onClick={handleBack} className="btn btn-secondary" style={{ padding: '8px 12px' }}>← Back</button>
+            <div className="page-header">
+                <div className="header-with-back">
+                    <button onClick={handleBack} className="btn btn-secondary">← Back</button>
                     <div>
-                        <h2 className="page-title" style={{ fontSize: '24px', margin: 0 }}>{selectedEmployee.name}</h2>
-                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Viewing Salary History</span>
+                        <h2 className="page-title">{selectedEmployee.name}</h2>
+                        <p className="page-subtitle">Salary History & Processing</p>
                     </div>
                 </div>
-                <button className="btn btn-primary" onClick={openNewSalaryForm}><FiPlus /> Process New Salary</button>
+                {!showForm && (
+                    <button className="btn btn-primary" onClick={openNewSalaryForm}>
+                        <FiPlus /> Process New Salary
+                    </button>
+                )}
             </div>
 
             {success && <div className="alert alert-success">{success}</div>}
@@ -341,28 +342,28 @@ const Salary = () => {
 
             {showForm ? (
                 <div className="card">
-                    <h3 style={{ marginTop: 0, borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '24px' }}>
-                        {editingSalary ? 'Edit Salary' : 'Process Salary'}
+                    <h3 className="section-title">
+                        {editingSalary ? 'Edit Salary' : 'Process New Salary'}
                     </h3>
-                    <form onSubmit={handleSubmit}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
-                            {/* Section 1: details */}
+                    <form onSubmit={handleSubmit} className="salary-form">
+                        <div className="form-grid">
+                            {/* Section 1: Details */}
                             <div className="form-section">
-                                <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase' }}>Salary Details</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                                    <div>
+                                <h4 className="section-subtitle">Period & Method</h4>
+                                <div className="form-row-grid">
+                                    <div className="form-group">
                                         <label className="form-label">Month</label>
                                         <select className="form-input" name="month" value={formData.month} onChange={(e) => setFormData({ ...formData, month: Number(e.target.value) })}>
                                             {[...Array(12)].map((_, i) => <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>)}
                                         </select>
                                     </div>
-                                    <div>
+                                    <div className="form-group">
                                         <label className="form-label">Year</label>
                                         <input className="form-input" type="number" name="year" value={formData.year} onChange={handleInputChange} />
                                     </div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div>
+                                <div className="form-row-grid">
+                                    <div className="form-group">
                                         <label className="form-label">Payment Type</label>
                                         <select className="form-input" name="paymentType" value={formData.paymentType} onChange={handleInputChange}>
                                             <option value="CASH">CASH</option>
@@ -370,7 +371,7 @@ const Salary = () => {
                                             <option value="CHEQUE">CHEQUE</option>
                                         </select>
                                     </div>
-                                    <div>
+                                    <div className="form-group">
                                         <label className="form-label">Working Days</label>
                                         <input className="form-input" type="number" name="workingDays" value={formData.workingDays} onChange={handleInputChange} />
                                     </div>
@@ -379,48 +380,81 @@ const Salary = () => {
 
                             {/* Section 2: Earnings */}
                             <div className="form-section">
-                                <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase' }}>Earnings</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div><label className="form-label">Basic</label> <input className="form-input" type="number" name="basic" value={formData.basic} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">HRA</label> <input className="form-input" type="number" name="hra" value={formData.hra} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">Conveyance</label> <input className="form-input" type="number" name="conveyance" value={formData.conveyance} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">Medical</label> <input className="form-input" type="number" name="medical" value={formData.medical} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">Special</label> <input className="form-input" type="number" name="special" value={formData.special} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">Bonus</label> <input className="form-input" type="number" name="bonus" value={formData.bonus} onChange={handleInputChange} /></div>
+                                <h4 className="section-subtitle">Gross Earnings</h4>
+                                <div className="form-row-grid">
+                                    <div className="form-group">
+                                        <label className="form-label">Basic</label>
+                                        <input className="form-input" type="number" name="basic" value={formData.basic} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">HRA</label>
+                                        <input className="form-input" type="number" name="hra" value={formData.hra} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Conveyance</label>
+                                        <input className="form-input" type="number" name="conveyance" value={formData.conveyance} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Medical</label>
+                                        <input className="form-input" type="number" name="medical" value={formData.medical} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Special</label>
+                                        <input className="form-input" type="number" name="special" value={formData.special} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Bonus</label>
+                                        <input className="form-input" type="number" name="bonus" value={formData.bonus} onChange={handleInputChange} />
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Section 3: Deductions */}
                             <div className="form-section">
-                                <h4 style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase' }}>Deductions</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div><label className="form-label">PF</label> <input className="form-input" type="number" name="pf" value={formData.pf} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">ESI</label> <input className="form-input" type="number" name="esi" value={formData.esi} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">Professional Tax</label> <input className="form-input" type="number" name="pt" value={formData.pt} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">TDS</label> <input className="form-input" type="number" name="tds" value={formData.tds} onChange={handleInputChange} /></div>
-                                    <div><label className="form-label">Advance</label> <input className="form-input" type="number" name="advance" value={formData.advance} onChange={handleInputChange} /></div>
+                                <h4 className="section-subtitle text-danger">Deductions</h4>
+                                <div className="form-row-grid">
+                                    <div className="form-group">
+                                        <label className="form-label">PF</label>
+                                        <input className="form-input" type="number" name="pf" value={formData.pf} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">ESI</label>
+                                        <input className="form-input" type="number" name="esi" value={formData.esi} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">PT</label>
+                                        <input className="form-input" type="number" name="pt" value={formData.pt} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">TDS</label>
+                                        <input className="form-input" type="number" name="tds" value={formData.tds} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Advance</label>
+                                        <input className="form-input" type="number" name="advance" value={formData.advance} onChange={handleInputChange} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ background: '#2d3436', color: 'white', padding: '24px', borderRadius: '0', marginTop: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '16px' }}>
-                            <div>
-                                <span style={{ display: 'block', fontSize: '12px', opacity: 0.7 }}>GROSS EARNINGS</span>
-                                <span style={{ fontSize: '20px', fontWeight: 600 }}>₹{calculateGross().toLocaleString('en-IN')}</span>
+                        <div className="summary-banner">
+                            <div className="summary-item">
+                                <span className="summary-label">GROSS PAY</span>
+                                <span className="summary-value">₹{calculateGross().toLocaleString('en-IN')}</span>
                             </div>
-                            <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', height: '40px' }}></div>
-                            <div>
-                                <span style={{ display: 'block', fontSize: '12px', opacity: 0.7, color: '#ff7675' }}>TOTAL DEDUCTIONS</span>
-                                <span style={{ fontSize: '20px', fontWeight: 600, color: '#ff7675' }}>₹{calculateDeductions().toLocaleString('en-IN')}</span>
+                            <div className="summary-divider"></div>
+                            <div className="summary-item">
+                                <span className="summary-label text-danger">DEDUCTIONS</span>
+                                <span className="summary-value text-danger">₹{calculateDeductions().toLocaleString('en-IN')}</span>
                             </div>
-                            <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', height: '40px' }}></div>
-                            <div style={{ textAlign: 'right' }}>
-                                <span style={{ display: 'block', fontSize: '12px', opacity: 0.7, color: '#55efc4' }}>NET PAYABLE</span>
-                                <span style={{ fontSize: '28px', fontWeight: 700, color: '#55efc4' }}>₹{calculateNet().toLocaleString('en-IN')}</span>
+                            <div className="summary-divider"></div>
+                            <div className="summary-item">
+                                <span className="summary-label text-success">NET PAYABLE</span>
+                                <span className="summary-value text-success">₹{calculateNet().toLocaleString('en-IN')}</span>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                        <div className="form-actions">
                             <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary">Cancel</button>
                             <button type="submit" className="btn btn-primary">{editingSalary ? 'Update Salary' : 'Save Salary'}</button>
                         </div>
@@ -428,39 +462,48 @@ const Salary = () => {
                 </div>
             ) : (
                 <div className="card">
-                    {employeeSalaries.length === 0 ? <p className="empty-message">No salary records found for this employee.</p> : (
+                    <h3 className="section-title">Salary History</h3>
+                    {employeeSalaries.length === 0 ? (
+                        <div className="empty-message-container">
+                            <p className="empty-message">No salary records found for this employee.</p>
+                        </div>
+                    ) : (
                         <div className="table-container">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Period</th>
-                                        <th>Date Processed</th>
-                                        <th>Payment Type</th>
-                                        <th>Gross</th>
-                                        <th>Deductions</th>
-                                        <th>Net Salary</th>
+                                        <th>Processed Date</th>
+                                        <th>Payment Method</th>
+                                        <th>Gross Earnings</th>
+                                        <th>Total Deductions</th>
+                                        <th>Net Payable</th>
                                         <th>Status</th>
-                                        <th>Action</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {employeeSalaries.map((sal, idx) => (
                                         <tr key={idx}>
                                             <td>
-                                                <div style={{ fontWeight: 500 }}>{new Date(0, sal.month - 1).toLocaleString('default', { month: 'long' })} {sal.year}</div>
-                                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{sal.workingDays || 0} Working Days</div>
+                                                <div className="period-cell">
+                                                    <span className="period-month">
+                                                        {new Date(0, sal.month - 1).toLocaleString('default', { month: 'long' })} {sal.year}
+                                                    </span>
+                                                    <span className="period-days">{sal.workingDays || 0} Working Days</span>
+                                                </div>
                                             </td>
                                             <td>{new Date(sal.createdAt).toLocaleDateString()}</td>
                                             <td>
                                                 <span className="badge badge-secondary">{sal.paymentType || 'CASH'}</span>
                                             </td>
-                                            <td style={{ fontFamily: 'monospace', fontWeight: 500 }}>₹{sal.grossSalary?.toLocaleString('en-IN')}</td>
-                                            <td style={{ fontFamily: 'monospace', color: 'var(--danger)' }}>₹{sal.totalDeductions?.toLocaleString('en-IN')}</td>
-                                            <td style={{ fontFamily: 'monospace', color: 'var(--success)', fontWeight: 'bold' }}>₹{sal.netSalary?.toLocaleString('en-IN')}</td>
+                                            <td className="amount-cell">₹{sal.grossSalary?.toLocaleString('en-IN')}</td>
+                                            <td className="amount-cell text-danger">₹{sal.totalDeductions?.toLocaleString('en-IN')}</td>
+                                            <td className="amount-cell text-success font-bold">₹{sal.netSalary?.toLocaleString('en-IN')}</td>
                                             <td><span className="badge badge-success">{sal.status}</span></td>
                                             <td>
-                                                <button className="btn btn-secondary btn-sm" onClick={() => openEditModal(sal)}>
-                                                    <FiEdit2 /> Edit
+                                                <button className="action-btn edit" onClick={() => openEditModal(sal)} title="Edit">
+                                                    <FiEdit2 />
                                                 </button>
                                             </td>
                                         </tr>

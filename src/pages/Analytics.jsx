@@ -137,16 +137,18 @@ const Analytics = () => {
             {
                 label: 'Present (Unique)',
                 data: weeklyData.map(d => d.present),
-                backgroundColor: 'rgba(76, 175, 80, 0.8)',
-                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                borderColor: '#10b981',
                 borderWidth: 1,
+                borderRadius: 4,
             },
             {
                 label: 'Late',
                 data: weeklyData.map(d => d.late),
-                backgroundColor: 'rgba(255, 152, 0, 0.8)',
-                borderColor: '#FF9800',
+                backgroundColor: 'rgba(239, 65, 54, 0.8)',
+                borderColor: '#EF4136',
                 borderWidth: 1,
+                borderRadius: 4,
             },
         ],
     };
@@ -155,7 +157,7 @@ const Analytics = () => {
         labels: ['Present', 'Late', 'Absent'],
         datasets: [{
             data: [attendanceDistribution.present, attendanceDistribution.late, attendanceDistribution.absent],
-            backgroundColor: ['#4CAF50', '#FF9800', '#f44336'],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
             borderWidth: 0,
         }],
     };

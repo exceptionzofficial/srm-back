@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getPendingFundRequests, processFundRequest, getEmployees } from '../../services/api';
-import { FiCheck, FiX, FiRefreshCw, FiDollarSign, FiSearch, FiCreditCard } from 'react-icons/fi';
+import { FiCheck, FiX, FiRefreshCw, FiDollarSign, FiSearch, FiCreditCard, FiArrowUpRight, FiPieChart, FiUsers } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const FinanceDashboard = () => {
     const [activeTab, setActiveTab] = useState('payroll'); // 'requests' or 'payroll'
@@ -32,7 +33,6 @@ const FinanceDashboard = () => {
     const handleAction = async (id, action) => {
         try {
             await processFundRequest({ id, action, actorRole: 'CFO' });
-            // Refresh logic could be better but simple fetch works
             const reqRes = await getPendingFundRequests('CFO');
             setRequests(reqRes.data || []);
         } catch (error) {
@@ -49,148 +49,175 @@ const FinanceDashboard = () => {
     );
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Finance Department (CFO)</h1>
-                <button onClick={loadData} className="p-2 bg-white rounded-full shadow-sm hover:shadow text-gray-600">
-                    <FiRefreshCw />
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Pending Fund Requests</h3>
-                    <p className="text-3xl font-bold text-gray-900">{requests.length}</p>
+        <div className="dashboard-container" style={{ padding: '0' }}>
+            <div className="page-header" style={{ marginBottom: '40px' }}>
+                <div>
+                    <h1 className="page-title" style={{ fontSize: '32px', fontWeight: 800 }}>Finance Operations</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontWeight: 600, marginTop: '4px' }}>Chief Financial Officer Dashboard</p>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Requested Amount</h3>
-                    <p className="text-3xl font-bold text-red-600">₹{totalAmount.toLocaleString()}</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Est. Monthly Payroll</h3>
-                    <p className="text-3xl font-bold text-green-600">₹{totalMonthlyPayroll.toLocaleString()}</p>
+                <div className="flex-row" style={{ gap: '12px', display: 'flex', alignItems: 'center' }}>
+                    <button
+                        onClick={loadData}
+                        className="btn btn-secondary"
+                        style={{ padding: '10px' }}
+                    >
+                        <FiRefreshCw className={loading ? 'animate-spin' : ''} />
+                    </button>
+                    <div className="badge badge-success" style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FiDollarSign />
+                        Payout Ready
+                    </div>
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-4 mb-6 border-b border-gray-200">
-                <button
-                    onClick={() => setActiveTab('payroll')}
-                    className={`pb-3 px-4 font-medium transition-colors border-b-2 ${activeTab === 'payroll' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                >
-                    Payroll & Bank Data
-                </button>
-                <button
-                    onClick={() => setActiveTab('requests')}
-                    className={`pb-3 px-4 font-medium transition-colors border-b-2 ${activeTab === 'requests' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                >
-                    Fund Requests
-                </button>
+            <div className="stats-grid">
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: '#ecfdf5', color: 'var(--success)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                        <FiArrowUpRight size={24} />
+                    </div>
+                    <div className="stat-value">₹{totalAmount.toLocaleString()}</div>
+                    <div className="stat-label">Requested Amount</div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: '#fef2f2', color: 'var(--danger)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                        <FiPieChart size={24} />
+                    </div>
+                    <div className="stat-value">{requests.length}</div>
+                    <div className="stat-label">Pending Fund Requests</div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: '#eff6ff', color: 'var(--info)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                        <FiUsers size={24} />
+                    </div>
+                    <div className="stat-value">₹{totalMonthlyPayroll.toLocaleString()}</div>
+                    <div className="stat-label">Est. Monthly Payroll</div>
+                </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
-                {loading ? <div className="p-8 text-center text-gray-500">Loading data...</div> : (
-                    <>
-                        {activeTab === 'requests' && (
-                            <div className="p-6">
-                                {requests.length === 0 ? <p className="text-gray-500 text-center py-8">No pending requests.</p> : (
-                                    <table className="w-full text-left">
-                                        <thead className="bg-gray-50 text-gray-600 text-sm">
-                                            <tr>
-                                                <th className="p-3">Requester</th>
-                                                <th className="p-3">Amount</th>
-                                                <th className="p-3">Reason</th>
-                                                <th className="p-3">Type</th>
-                                                <th className="p-3">Actions</th>
+            <div className="flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '20px' }}>
+                <div className="tabs" style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '10px' }}>
+                    <button
+                        onClick={() => setActiveTab('payroll')}
+                        className="btn"
+                        style={{
+                            background: activeTab === 'payroll' ? 'white' : 'transparent',
+                            color: activeTab === 'payroll' ? 'var(--text-main)' : 'var(--text-secondary)',
+                            boxShadow: activeTab === 'payroll' ? 'var(--shadow-sm)' : 'none',
+                            padding: '8px 20px',
+                            fontSize: '14px'
+                        }}
+                    >
+                        Payroll & Bank
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('requests')}
+                        className="btn"
+                        style={{
+                            background: activeTab === 'requests' ? 'white' : 'transparent',
+                            color: activeTab === 'requests' ? 'var(--text-main)' : 'var(--text-secondary)',
+                            boxShadow: activeTab === 'requests' ? 'var(--shadow-sm)' : 'none',
+                            padding: '8px 20px',
+                            fontSize: '14px'
+                        }}
+                    >
+                        Fund Requests
+                    </button>
+                </div>
+
+                <div className="search-box" style={{ position: 'relative', width: '320px' }}>
+                    <FiSearch style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                    <input
+                        type="text"
+                        placeholder="Search records..."
+                        className="form-input"
+                        style={{ paddingLeft: '40px' }}
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                <AnimatePresence mode="wait">
+                    {loading ? (
+                        <div className="loading-container" style={{ minHeight: '400px' }}>
+                            <div className="spinner"></div>
+                        </div>
+                    ) : (
+                        <div className="table-container" style={{ border: 'none' }}>
+                            {activeTab === 'requests' ? (
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Requester</th>
+                                            <th>Amount</th>
+                                            <th>Reason</th>
+                                            <th>Department</th>
+                                            <th style={{ textAlign: 'right' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {requests.length === 0 ? (
+                                            <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No pending requests</td></tr>
+                                        ) : requests.map(req => (
+                                            <tr key={req.id}>
+                                                <td>
+                                                    <div style={{ fontWeight: 700 }}>{req.requesterName}</div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>ID: {req.id.slice(0, 8)}</div>
+                                                </td>
+                                                <td style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '16px' }}>₹{req.amount}</td>
+                                                <td style={{ maxWidth: '300px', fontSize: '13px' }}>{req.reason}</td>
+                                                <td><span className="badge badge-secondary">{req.requesterRole}</span></td>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <div className="action-buttons" style={{ justifyContent: 'flex-end', gap: '8px' }}>
+                                                        <button className="btn btn-sm btn-primary" onClick={() => handleAction(req.id, 'APPROVE')} style={{ padding: '6px 12px' }}>Approve</button>
+                                                        <button className="btn btn-sm btn-danger" onClick={() => handleAction(req.id, 'REJECT')} style={{ padding: '6px 12px' }}>Reject</button>
+                                                    </div>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {requests.map(req => (
-                                                <tr key={req.id}>
-                                                    <td className="p-3 font-medium">{req.requesterName}</td>
-                                                    <td className="p-3">₹{req.amount}</td>
-                                                    <td className="p-3 text-gray-600">{req.reason}</td>
-                                                    <td className="p-3"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">{req.requesterRole}</span></td>
-                                                    <td className="p-3 flex gap-2">
-                                                        <button className="text-green-600 hover:bg-green-50 p-2 rounded" onClick={() => handleAction(req.id, 'APPROVE')} title="Approve">
-                                                            <FiCheck />
-                                                        </button>
-                                                        <button className="text-red-600 hover:bg-red-50 p-2 rounded" onClick={() => handleAction(req.id, 'REJECT')} title="Reject">
-                                                            <FiX />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'payroll' && (
-                            <div>
-                                <div className="p-4 border-b border-gray-100 flex justify-end">
-                                    <div className="relative w-full md:w-64">
-                                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Search employee..."
-                                            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            value={searchTerm}
-                                            onChange={e => setSearchTerm(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-gray-50 text-gray-600 text-sm">
-                                            <tr>
-                                                <th className="p-4 font-medium">Employee</th>
-                                                <th className="p-4 font-medium">Bank Details</th>
-                                                <th className="p-4 font-medium">Account No.</th>
-                                                <th className="p-4 font-medium">IFSC</th>
-                                                <th className="p-4 font-medium">Fixed Salary (CTC)</th>
-                                                <th className="p-4 font-medium">Pay Mode</th>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Bank Entity</th>
+                                            <th>Account & IFSC</th>
+                                            <th style={{ textAlign: 'right' }}>Fixed CTC</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredEmployees.map(emp => (
+                                            <tr key={emp.employeeId}>
+                                                <td>
+                                                    <div style={{ fontWeight: 700 }}>{emp.name}</div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{emp.employeeId}</div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <FiCreditCard style={{ color: 'var(--text-secondary)' }} />
+                                                        <span style={{ fontWeight: 500 }}>{emp.bankDetails?.bankName || 'Not Set'}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '14px' }}>{emp.bankDetails?.accountNumber || '•••• •••• ••••'}</div>
+                                                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{emp.bankDetails?.ifscCode || 'IFSC N/A'}</div>
+                                                </td>
+                                                <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                                                    {emp.fixedSalary ? `₹${Number(emp.fixedSalary).toLocaleString()}` : '—'}
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {filteredEmployees.map(emp => (
-                                                <tr key={emp.employeeId} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="p-4">
-                                                        <div className="font-medium text-gray-900">{emp.name}</div>
-                                                        <div className="text-xs text-gray-500">{emp.employeeId}</div>
-                                                    </td>
-                                                    <td className="p-4">
-                                                        {emp.bankDetails?.bankName ? (
-                                                            <div className="flex items-center gap-2">
-                                                                <FiCreditCard className="text-gray-400" />
-                                                                <span>{emp.bankDetails.bankName}</span>
-                                                            </div>
-                                                        ) : <span className="text-gray-400 italic">Not set</span>}
-                                                    </td>
-                                                    <td className="p-4 font-mono text-sm text-gray-700">
-                                                        {emp.bankDetails?.accountNumber || '-'}
-                                                    </td>
-                                                    <td className="p-4 font-mono text-sm text-gray-700">
-                                                        {emp.bankDetails?.ifscCode || '-'}
-                                                    </td>
-                                                    <td className="p-4 font-medium text-gray-900">
-                                                        {emp.fixedSalary ? `₹${Number(emp.fixedSalary).toLocaleString()}` : '-'}
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
-                                                            {emp.bankDetails?.paymentMode || 'Transfer'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

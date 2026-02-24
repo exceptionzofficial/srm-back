@@ -2,7 +2,7 @@
  * Documents Page - View and Upload Employee Documents (Super Admin)
  */
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiSearch, FiUser, FiFileText, FiExternalLink, FiChevronDown, FiChevronUp, FiCamera, FiCreditCard, FiFile, FiBookOpen, FiHome, FiUpload, FiCheck, FiX, FiLoader } from 'react-icons/fi';
 import { getEmployees, getBranches, updateEmployee } from '../services/api';
 import './Documents.css';
@@ -200,8 +200,8 @@ const Documents = () => {
                                             const isExpanded = expandedEmployee === emp.employeeId;
 
                                             return (
-                                                <>
-                                                    <tr key={emp.employeeId} style={{ cursor: 'pointer' }} onClick={() => toggleExpand(emp.employeeId)}>
+                                                <React.Fragment key={emp.employeeId}>
+                                                    <tr style={{ cursor: 'pointer' }} onClick={() => toggleExpand(emp.employeeId)}>
                                                         <td className="text-muted">{idx + 1}</td>
                                                         <td>
                                                             <div className="emp-name-cell">
@@ -316,7 +316,7 @@ const Documents = () => {
                                                             </td>
                                                         </tr>
                                                     )}
-                                                </>
+                                                </React.Fragment>
                                             );
                                         })}
                                     </tbody>

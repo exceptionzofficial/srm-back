@@ -46,10 +46,10 @@ const EmployeeRules = () => {
 
     return (
         <div className="rules-page">
-            <header className="page-header">
-                <h1>Employee Rules & Guidelines</h1>
-                <p>Define the rules and policies visible to all employees.</p>
-            </header>
+            <div className="page-header" style={{ display: 'block' }}>
+                <h1 className="page-title">Employee Rules & Guidelines</h1>
+                <p className="text-secondary">Define the rules and policies visible to all employees.</p>
+            </div>
 
             {message && (
                 <div className={`message-banner ${message.type}`}>

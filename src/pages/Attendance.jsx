@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { FiCalendar, FiDownload, FiClock, FiMapPin } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
-import { getAttendanceByDate, getEmployees, getBranches } from '../services/api';
+import { getAttendanceReport, getEmployees, getBranches, getAttendanceByDate } from '../services/api';
 import './Attendance.css';
 
 const Attendance = () => {
@@ -48,12 +48,11 @@ const Attendance = () => {
         }
     };
 
-    const formatTime = (isoString) => {
-        if (!isoString) return '--:--';
-        return new Date(isoString).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-        });
+    const formatMinutes = (minutes) => {
+        if (!minutes || minutes <= 0) return '-';
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h}h ${m}m`;
     };
 
     const getEmployeeName = (employeeId) => {
@@ -111,16 +110,12 @@ const Attendance = () => {
     };
 
     // Calculate unique employees who have attendance
-    const uniqueEmployeeIds = [...new Set(attendance.map(a => a.employeeId))];
-
-    // Stats - based on unique employees
     const stats = {
         total: employees.length,
-        present: uniqueEmployeeIds.length, // Unique employees who checked in
-        absent: Math.max(0, employees.length - uniqueEmployeeIds.length), // Employees who didn't check in
-        sessions: attendance.length, // Total check-in sessions
-        onTime: attendance.filter(a => a.status === 'present').length,
-        late: attendance.filter(a => a.status === 'late').length,
+        present: attendance.filter(a => a.status.includes('Present') || a.status.includes('Late in') || a.status.includes('On Travel')).length,
+        absent: attendance.filter(a => a.status.includes('Absent')).length,
+        travel: attendance.filter(a => a.status.includes('On Travel')).length,
+        late: attendance.filter(a => a.status.includes('Late in')).length,
     };
 
     return (
@@ -143,7 +138,6 @@ const Attendance = () => {
                 </div>
             </div>
 
-            {/* Stats */}
             <div className="attendance-stats">
                 <div className="stat-item">
                     <span className="stat-number">{stats.total}</span>
@@ -157,21 +151,21 @@ const Attendance = () => {
                     <span className="stat-number">{stats.absent}</span>
                     <span className="stat-text">Absent</span>
                 </div>
-                <div className="stat-item">
-                    <span className="stat-number">{stats.sessions}</span>
-                    <span className="stat-text">Sessions</span>
-                </div>
                 <div className="stat-item late">
                     <span className="stat-number">{stats.late}</span>
-                    <span className="stat-text">Late</span>
+                    <span className="stat-text">Late In</span>
+                </div>
+                <div className="stat-item" style={{ borderBottom: '4px solid var(--info)' }}>
+                    <span className="stat-number">{stats.travel}</span>
+                    <span className="stat-text">On Travel</span>
                 </div>
             </div>
 
             {/* Attendance Table */}
-            <div className="card">
-                <div className="card-header">
-                    <h2 className="card-title">
-                        <FiClock style={{ marginRight: '8px' }} />
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="card-header" style={{ padding: '24px', borderBottom: '1px solid var(--border)' }}>
+                    <h2 className="card-title" style={{ margin: 0 }}>
+                        <FiClock style={{ marginRight: '10px', color: 'var(--primary)' }} />
                         {new Date(selectedDate).toLocaleDateString('en-US', {
                             weekday: 'long',
                             year: 'numeric',
@@ -200,48 +194,39 @@ const Attendance = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {uniqueEmployeeIds.map((employeeId, index) => {
-                                    // Get all sessions for this employee, sorted by checkInTime
-                                    const sessions = attendance
-                                        .filter(a => a.employeeId === employeeId)
-                                        .sort((a, b) => new Date(b.checkInTime) - new Date(a.checkInTime)); // Newest first
-                                    // Get latest session (first after sorting by newest)
-                                    const latestSession = sessions[0];
-
-                                    // Calculate total work time from all sessions
-                                    let totalMinutes = 0;
-                                    sessions.forEach(s => {
-                                        if (s.checkInTime && s.checkOutTime) {
-                                            const diff = new Date(s.checkOutTime) - new Date(s.checkInTime);
-                                            totalMinutes += Math.floor(diff / (1000 * 60));
-                                        }
-                                    });
-                                    const totalHours = Math.floor(totalMinutes / 60);
-                                    const remainingMins = totalMinutes % 60;
-                                    const totalDuration = `${totalHours}h ${remainingMins}m`;
-
+                                {attendance.map((row, index) => {
                                     return (
-                                        <tr key={employeeId}>
+                                        <tr key={row.employeeId}>
                                             <td>{index + 1}</td>
                                             <td>
                                                 <div className="employee-cell">
-                                                    <strong>{employeeId}</strong>
-                                                    <span>{getEmployeeName(employeeId)}</span>
+                                                    <strong>{row.employeeId}</strong>
+                                                    <span>{row.name}</span>
                                                 </div>
                                             </td>
-                                            <td>{getEmployeeBranch(employeeId)}</td>
-                                            <td>{formatTime(latestSession.checkInTime)}</td>
-                                            <td>{formatTime(latestSession.checkOutTime)}</td>
+                                            <td>{getEmployeeBranch(row.employeeId)}</td>
+                                            <td>{row.times?.in || '-'}</td>
+                                            <td>{row.times?.out || '-'}</td>
                                             <td>
                                                 <span className="work-time">
-                                                    <FiMapPin style={{ marginRight: '4px', fontSize: '12px' }} />
-                                                    {totalDuration} ({sessions.length} session{sessions.length > 1 ? 's' : ''})
+                                                    <FiClock style={{ marginRight: '4px', fontSize: '12px' }} />
+                                                    {formatMinutes(row.totalWorkMinutes)}
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className={`badge ${getStatusBadgeClass(latestSession.status)}`}>
-                                                    {latestSession.status}
-                                                </span>
+                                                <div className="status-tags" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                    {Array.isArray(row.status) ? (
+                                                        row.status.map((s, i) => (
+                                                            <span key={i} className={`badge ${s.toLowerCase() === 'present' ? 'badge-success' : s.toLowerCase().includes('late') ? 'badge-warning' : s.toLowerCase().includes('absent') ? 'badge-danger' : 'badge-secondary'}`} style={{ fontSize: '10px' }}>
+                                                                {s}
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <span className={`badge ${row.status?.toLowerCase() === 'present' ? 'badge-success' : row.status?.toLowerCase().includes('late') ? 'badge-warning' : row.status?.toLowerCase().includes('absent') ? 'badge-danger' : 'badge-secondary'}`} style={{ fontSize: '10px' }}>
+                                                            {row.status}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );

@@ -75,7 +75,7 @@ const Managers = () => {
     if (loading) return <div className="loading-container"><div className="spinner"></div></div>;
 
     return (
-        <div className="employees-page"> {/* Reusing class for layout */}
+        <div className="employees-page">
             <div className="page-header">
                 <h1 className="page-title">Branch Managers</h1>
                 <div className="header-actions">
@@ -99,14 +99,14 @@ const Managers = () => {
             {error && <div className="alert alert-danger">{error}</div>}
 
             <div className="card">
-                <div className="table-responsive">
-                    <table className="table">
+                <div className="table-container">
+                    <table>
                         <thead>
                             <tr>
                                 <th>ID</th>
                                 <th>Name</th>
-                                <th>Branch</th>
-                                <th>Contact</th>
+                                <th>Role & Branch</th>
+                                <th>Contact Details</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -114,22 +114,36 @@ const Managers = () => {
                         <tbody>
                             {filteredManagers.map(manager => (
                                 <tr key={manager.employeeId}>
-                                    <td>{manager.employeeId}</td>
+                                    <td><strong>{manager.employeeId}</strong></td>
                                     <td>
-                                        <div style={{ fontWeight: 500 }}>{manager.name}</div>
-                                        <div style={{ fontSize: '12px', color: '#666' }}>Joined: {manager.joinedDate ? manager.joinedDate.split('T')[0] : 'N/A'}</div>
+                                        <div className="employee-info">
+                                            <div className="employee-avatar">
+                                                <FiBriefcase />
+                                            </div>
+                                            <div>
+                                                <span className="employee-name">{manager.name}</span>
+                                                <span className="employee-email">
+                                                    Joined: {manager.joinedDate ? manager.joinedDate.split('T')[0] : 'N/A'}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
-                                        <div className="badge badge-main" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                            <FiBriefcase /> {manager.role ? manager.role.replace('_', ' ') : 'Manager'}
-                                        </div>
-                                        <div style={{ fontSize: '11px', marginTop: '4px', color: '#666' }}>
-                                            <FiMapPin style={{ marginRight: '2px' }} /> {getBranchName(manager.branchId)}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            <span className="badge badge-secondary" style={{ width: 'fit-content' }}>
+                                                {manager.role ? manager.role.replace('_', ' ') : 'Manager'}
+                                            </span>
+                                            <div className="branch-cell">
+                                                <FiMapPin className="branch-icon-small" />
+                                                <span>{getBranchName(manager.branchId)}</span>
+                                            </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div><FiMail style={{ marginRight: 4 }} /> {manager.email}</div>
-                                        {manager.phone && <div><FiBriefcase style={{ marginRight: 4 }} /> {manager.phone}</div>}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '13px' }}>
+                                            <span>{manager.email}</span>
+                                            {manager.phone && <span style={{ color: 'var(--text-secondary)' }}>{manager.phone}</span>}
+                                        </div>
                                     </td>
                                     <td>
                                         <span className={`badge ${manager.isBlocked ? 'badge-danger' : 'badge-success'}`}>
@@ -137,18 +151,20 @@ const Managers = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button className="action-btn edit" onClick={() => handleNavigate(manager.employeeId)} title="Edit">
-                                            <FiEdit2 />
-                                        </button>
-                                        <button className="action-btn delete" onClick={() => handleDelete(manager.employeeId)} title="Delete">
-                                            <FiTrash2 />
-                                        </button>
+                                        <div className="action-buttons">
+                                            <button className="action-btn edit" onClick={() => handleNavigate(manager.employeeId)} title="Edit">
+                                                <FiEdit2 />
+                                            </button>
+                                            <button className="action-btn delete" onClick={() => handleDelete(manager.employeeId)} title="Delete">
+                                                <FiTrash2 />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                             {filteredManagers.length === 0 && (
                                 <tr>
-                                    <td colSpan="6" className="text-center" style={{ padding: '40px' }}>
+                                    <td colSpan="6" className="empty-message">
                                         No managers found. Add one to get started.
                                     </td>
                                 </tr>

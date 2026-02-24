@@ -166,16 +166,8 @@ const GeofenceSettings = () => {
                         </button>
 
                         <div className="form-group">
-                            <label className="form-label">Allowed Radius (meters)</label>
-                            <input
-                                type="number"
-                                min="10"
-                                max="10000"
-                                className="form-input"
-                                value={settings.radiusMeters}
-                                onChange={(e) => setSettings({ ...settings, radiusMeters: e.target.value })}
-                            />
-                            <div className="radius-slider">
+                            <label className="form-label">Allowed Radius: {settings.radiusMeters} meters</label>
+                            <div className="radius-slider-container">
                                 <input
                                     type="range"
                                     min="10"
@@ -183,11 +175,11 @@ const GeofenceSettings = () => {
                                     value={settings.radiusMeters}
                                     onChange={(e) => setSettings({ ...settings, radiusMeters: e.target.value })}
                                 />
-                                <span className="radius-labels">
+                                <div className="radius-labels">
                                     <span>10m</span>
                                     <span>250m</span>
                                     <span>500m</span>
-                                </span>
+                                </div>
                             </div>
                         </div>
 
@@ -217,30 +209,31 @@ const GeofenceSettings = () => {
                     <h3 className="info-title">How Geo-fencing Works</h3>
                     <ul className="info-list">
                         <li>
-                            <strong>Face Registration:</strong> Employees must be within the
-                            specified radius to register their face.
+                            <strong>Face Registration</strong>
+                            Employees must be within the specified radius to register their face.
                         </li>
                         <li>
-                            <strong>Attendance Marking:</strong> Check-in and check-out only
-                            work within the geo-fence boundary.
+                            <strong>Attendance Marking</strong>
+                            Check-in and check-out only work within the geo-fence boundary.
                         </li>
                         <li>
-                            <strong>Warning Message:</strong> Employees outside the radius will
-                            see "You are too far from office" message.
+                            <strong>Warning Message</strong>
+                            Employees outside the radius will see "You are too far from office" message.
                         </li>
                         <li>
-                            <strong>Distance Display:</strong> The app shows exactly how far
-                            the employee is from the office.
+                            <strong>Distance Display</strong>
+                            The app shows exactly how far the employee is from the office.
                         </li>
                     </ul>
 
                     {isConfigured && (
                         <div className="current-config">
                             <h4>Current Configuration</h4>
-                            <p><strong>Coordinates:</strong> {settings.officeLat}, {settings.officeLng}</p>
-                            <p><strong>Radius:</strong> {settings.radiusMeters} meters</p>
+                            <p><strong>Latitude</strong> {settings.officeLat}</p>
+                            <p><strong>Longitude</strong> {settings.officeLng}</p>
+                            <p><strong>Radius</strong> {settings.radiusMeters} meters</p>
                             {settings.officeAddress && (
-                                <p><strong>Address:</strong> {settings.officeAddress}</p>
+                                <p><strong>Address</strong> {settings.officeAddress}</p>
                             )}
                         </div>
                     )}
