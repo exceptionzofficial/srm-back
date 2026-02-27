@@ -1,0 +1,201 @@
+.page-container {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 32px;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+}
+
+.header-title-area {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+}
+
+.header-icon {
+    font-size: 28px;
+    color: var(--primary-color, #2196f3);
+}
+
+.page-title {
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    color: #333;
+    line-height: 1.2 !important;
+}
+
+.page-subtitle {
+    margin: 0;
+}
+
+/* Grid Layout */
+.permits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 24px;
+}
+
+.permit-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+}
+
+.permit-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.employee-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: #222;
+}
+
+.employee-info span {
+    font-size: 12px;
+    color: #777;
+}
+
+.amount-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.permit-details {
+    flex-grow: 1;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #444;
+}
+
+.detail-icon {
+    color: #888;
+}
+
+.reason-box {
+    background: #fff8e1;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 16px;
+    border-left: 4px solid #ffb300;
+}
+
+.reason-label {
+    margin: 0 0 6px 0;
+    font-size: 11px;
+    font-weight: 800;
+    color: #795548;
+    text-transform: uppercase;
+}
+
+.reason-list {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #5d4037;
+    font-weight: 600;
+}
+
+.permit-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn-permit {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-approve {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-approve:hover {
+    background: #43a047;
+}
+
+.btn-reject {
+    background: #fff;
+    color: #f44336;
+    border: 1px solid #f44336;
+}
+
+.btn-reject:hover {
+    background: #fff5f5;
+}
+
+/* States */
+.loading-state {
+    text-align: center;
+    padding: 100px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2196f3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.empty-permits {
+    text-align: center;
+    padding: 60px;
+    background: #f9f9f9;
+    border-radius: 12px;
+    color: #888;
+}
+
+.empty-icon {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 16px;
+}

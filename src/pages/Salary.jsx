@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { FiPlus, FiUser, FiEdit2, FiSearch } from 'react-icons/fi';
-import { getEmployees, createSalary, getSalaries, updateSalary } from '../services/api';
+import { getEmployees, createSalary, getSalaries, updateSalary, calculateSalary } from '../services/api';
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -117,11 +117,35 @@ const Salary = () => {
         const { name, value } = e.target;
         // Handle numeric fields
         const numericFields = ['basic', 'hra', 'conveyance', 'medical', 'special', 'bonus', 'pf', 'esi', 'pt', 'tds', 'advance', 'workingDays', 'year'];
+
+        let newValue = value;
         if (numericFields.includes(name)) {
-            // Allow empty string to let user delete the "0"
-            setFormData({ ...formData, [name]: value === '' ? '' : Number(value) });
-        } else {
-            setFormData({ ...formData, [name]: value });
+            newValue = value === '' ? '' : Number(value);
+        }
+
+        const updatedData = { ...formData, [name]: newValue };
+        setFormData(updatedData);
+
+        // Auto-fetch deductions if month or year changes
+        if (name === 'month' || name === 'year') {
+            fetchAutoDeductions(updatedData.month, updatedData.year);
+        }
+    };
+
+    const fetchAutoDeductions = async (month, year) => {
+        if (!selectedEmployee) return;
+        try {
+            const data = await calculateSalary(selectedEmployee.employeeId, month, year);
+            if (data.success) {
+                setFormData(prev => ({
+                    ...prev,
+                    advance: data.deductions.advance,
+                    pf: data.deductions.pf || prev.pf,
+                    esi: data.deductions.esi || prev.esi
+                }));
+            }
+        } catch (error) {
+            console.error('Error fetching auto deductions:', error);
         }
     };
 
@@ -208,15 +232,24 @@ const Salary = () => {
 
     const openNewSalaryForm = () => {
         setEditingSalary(null);
-        setFormData({
+        const initialForm = {
             month: new Date().getMonth() + 1,
             year: new Date().getFullYear(),
             paymentType: 'CASH',
             workingDays: 26,
-            basic: 0, hra: 0, conveyance: 0, medical: 0, special: 0, bonus: 0,
+            basic: selectedEmployee?.fixedSalary ? Math.round(selectedEmployee.fixedSalary * 0.5) : 0, // Mock split
+            hra: selectedEmployee?.fixedSalary ? Math.round(selectedEmployee.fixedSalary * 0.3) : 0,
+            conveyance: 0,
+            medical: 0,
+            special: selectedEmployee?.fixedSalary ? Math.round(selectedEmployee.fixedSalary * 0.2) : 0,
+            bonus: 0,
             pf: 0, esi: 0, pt: 0, tds: 0, advance: 0
-        });
+        };
+        setFormData(initialForm);
         setShowForm(true);
+
+        // Fetch auto-calculated values for the default month/year
+        fetchAutoDeductions(initialForm.month, initialForm.year);
     };
 
     // Role Filtering

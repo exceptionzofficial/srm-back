@@ -41,6 +41,7 @@ const Sidebar = ({ userRole }) => {
             { path: '/managers', icon: <FiBriefcase />, label: 'Managers' },
             { path: '/attendance', icon: <FiCalendar />, label: 'Attendance' },
             { path: '/requests', icon: <FiFileText />, label: 'Requests' },
+            { path: '/advance-permits', icon: <FiCheckCircle />, label: 'Advance' },
             { path: '/documents', icon: <FiFile />, label: 'Documents' },
             { path: '/chat', icon: <FiMessageSquare />, label: 'Chat Groups' }, // Moved up
             { path: '/salary', icon: <FiDollarSign />, label: 'Salary' },

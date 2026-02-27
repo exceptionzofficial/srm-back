@@ -17,6 +17,7 @@ import Salary from './pages/Salary';
 import Analytics from './pages/Analytics';
 import BranchDetails from './pages/BranchDetails';
 import Requests from './pages/Requests';
+import AdvancePermits from './pages/AdvancePermits';
 import EmployeeRules from './pages/EmployeeRules';
 import ChatGroups from './pages/ChatGroups';
 import PayGroups from './pages/PayGroups';
@@ -73,6 +74,7 @@ function App() {
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/attendance/view/:id" element={<AttendanceView />} />
               <Route path="/requests" element={<Requests />} />
+              <Route path="/advance-permits" element={<AdvancePermits />} />
               <Route path="/salary" element={<Salary />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/rules" element={<EmployeeRules />} />

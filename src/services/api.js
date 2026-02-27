@@ -202,6 +202,13 @@ export const updateSalary = async (salaryId, data) => {
     return response.data;
 };
 
+export const calculateSalary = async (employeeId, month, year) => {
+    const response = await api.get(`/api/salary/calculate/${employeeId}`, {
+        params: { month, year }
+    });
+    return response.data;
+};
+
 // ==================== REQUEST ENDPOINTS ====================
 
 export const getAllRequests = async (status = null) => {
@@ -212,6 +219,20 @@ export const getAllRequests = async (status = null) => {
 
 export const getRequestsByEmployee = async (employeeId) => {
     const response = await api.get(`/api/requests/employee/${employeeId}`);
+    return response.data;
+};
+
+export const updateRequestStatus = async (requestId, status, rejectionReason = null) => {
+    // Determine actionBy based on user context
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const actionBy = `${user.role || 'SUPER_ADMIN'}:${user.name || 'Super Admin'}`;
+
+    const response = await api.put(`/api/requests/${requestId}/status`, {
+        status,
+        hrId: 'super-admin-1',
+        actionBy,
+        rejectionReason
+    });
     return response.data;
 };
 
