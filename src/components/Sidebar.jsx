@@ -47,6 +47,7 @@ const Sidebar = ({ userRole }) => {
             { path: '/salary', icon: <FiDollarSign />, label: 'Salary' },
             { path: '/rules', icon: <FiFileText />, label: 'Rules' },
             { path: '/pay-groups', icon: <FiLayers />, label: 'Pay Groups' },
+            { path: '/clusters', icon: <FiBox />, label: 'Clusters' },
             // Super Admin Access to Role Dashboards
             { path: '/finance', icon: <FiPieChart />, label: 'Finance' },
             { path: '/legal', icon: <FiBriefcase />, label: 'Legal' },

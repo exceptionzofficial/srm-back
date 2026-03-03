@@ -115,7 +115,7 @@ const ManagerForm = () => {
         setLoading(true);
 
         try {
-            if (!formData.branchId) throw new Error('Please select a branch');
+            if (formData.role !== 'CLUSTER_MANAGER' && !formData.branchId) throw new Error('Please select a branch');
             if (!formData.name) throw new Error('Name is required');
             if (!formData.employeeId) throw new Error('Employee ID is required');
             if (!formData.email) throw new Error('Email is required');
@@ -294,9 +294,9 @@ const ManagerForm = () => {
                             />
                         </div>
 
-                        {/* Branch */}
+                        {/* Branch — not required for Cluster Managers */}
                         <div className="form-group">
-                            <label className="form-label">Assign Branch *</label>
+                            <label className="form-label">{formData.role === 'CLUSTER_MANAGER' ? 'Assign Branch' : 'Assign Branch *'}</label>
                             <div className="input-icon-wrapper">
                                 <FiMapPin className="input-icon" />
                                 <select

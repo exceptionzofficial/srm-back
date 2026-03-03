@@ -29,6 +29,7 @@ import BranchManagerDashboard from './pages/roles/BranchManagerDashboard';
 import Managers from './pages/Managers';
 import ManagerForm from './pages/ManagerForm';
 import Documents from './pages/Documents';
+import Clusters from './pages/Clusters';
 import './index.css';
 
 const ProtectedLayout = ({ children }) => {
@@ -81,6 +82,7 @@ function App() {
               <Route path="/chat" element={<ChatGroups />} />
               <Route path="/pay-groups" element={<PayGroups />} />
               <Route path="/documents" element={<Documents />} />
+              <Route path="/clusters" element={<Clusters />} />
             </Routes>
           </ProtectedLayout>
         } />

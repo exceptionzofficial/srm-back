@@ -334,4 +334,26 @@ export const login = async (email, password) => {
     return response.data;
 };
 
+// ==================== CLUSTER ENDPOINTS ====================
+
+export const getClusters = async () => {
+    const response = await api.get('/api/clusters');
+    return response.data;
+};
+
+export const createCluster = async (data) => {
+    const response = await api.post('/api/clusters', data);
+    return response.data;
+};
+
+export const updateCluster = async (id, data) => {
+    const response = await api.put(`/api/clusters/${id}`, data);
+    return response.data;
+};
+
+export const deleteCluster = async (id) => {
+    const response = await api.delete(`/api/clusters/${id}`);
+    return response.data;
+};
+
 export default api;
