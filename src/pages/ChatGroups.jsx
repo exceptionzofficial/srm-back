@@ -25,7 +25,14 @@ const ChatGroups = () => {
     const [branches, setBranches] = useState([]);
 
     // Hardcoded HR User for this portal view (matches backend auto-join)
-    const currentUser = { id: 'hr-admin-1', name: 'Super Admin' };
+    // Get user from localStorage or use fallback
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = storedUser.employeeId || storedUser.managerId || storedUser.id || 'admin-1';
+
+    const currentUser = {
+        id: userId,
+        name: storedUser.name || 'Super Admin'
+    };
 
     useEffect(() => {
         if (selectedGroupId) {
