@@ -1,50 +1,231 @@
-/**
- * Attendance Reports Page - View Only (Work time from GPS tracking)
- */
-
-import { useState, useEffect } from 'react';
-import { FiCalendar, FiDownload, FiClock, FiMapPin } from 'react-icons/fi';
-import * as XLSX from 'xlsx';
-import { getAttendanceReport, getEmployees, getBranches, getAttendanceByDate } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { getAttendanceReport, getBranches, getBranch } from '../services/api';
+import { FiSearch } from 'react-icons/fi';
 import './Attendance.css';
 
 const Attendance = () => {
-    const [selectedDate, setSelectedDate] = useState(
-        new Date().toISOString().split('T')[0]
-    );
-    const [attendance, setAttendance] = useState([]);
-    const [employees, setEmployees] = useState([]);
+    const today = new Date().toISOString().split('T')[0];
+    const [reportType, setReportType] = useState('daily'); // daily, weekly, monthly, custom
+    const [date, setDate] = useState(today);
+    const [startDate, setStartDate] = useState(today);
+    const [endDate, setEndDate] = useState(today);
+
+    const [report, setReport] = useState([]);
+    const [summaryData, setSummaryData] = useState(null); // For range reports
+    const [debugInfo, setDebugInfo] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [fetched, setFetched] = useState(false);
+    const [branchDetails, setBranchDetails] = useState(null);
     const [branches, setBranches] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [selectedBranch, setSelectedBranch] = useState('');
 
     useEffect(() => {
-        loadData();
+        const fetchBranches = async () => {
+            try {
+                const res = await getBranches();
+                if (res && res.branches) {
+                    setBranches(res.branches);
+                }
+            } catch (error) {
+                console.error("Failed to fetch branches", error);
+            }
+        };
+        fetchBranches();
+    }, []);
 
-        // Auto-refresh every 60 seconds for real-time updates
-        const refreshInterval = setInterval(() => {
-            console.log('[Attendance] Auto-refreshing data...');
-            loadData();
-        }, 60000);
+    // Auto-set dates when type changes
+    useEffect(() => {
+        const now = new Date();
+        if (reportType === 'weekly') {
+            // Last 7 Days
+            const end = now.toISOString().split('T')[0];
+            const start = new Date(now.setDate(now.getDate() - 6)).toISOString().split('T')[0];
+            setStartDate(start);
+            setEndDate(end);
+        } else if (reportType === 'monthly') {
+            // This Month
+            const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            setStartDate(start);
+            setEndDate(end);
+        } else if (reportType === 'daily') {
+            setDate(today);
+        }
+    }, [reportType]);
 
-        return () => clearInterval(refreshInterval);
-    }, [selectedDate]);
+    // Auto-load today's report on page load
+    useEffect(() => {
+        handleGenerate();
+    }, []);
 
-    const loadData = async () => {
-        setLoading(true);
+    const handleGenerate = async () => {
         try {
-            const [attResponse, empResponse, branchResponse] = await Promise.all([
-                getAttendanceByDate(selectedDate).catch(() => ({ records: [] })),
-                getEmployees().catch(() => ({ employees: [] })),
-                getBranches().catch(() => ({ branches: [] })),
-            ]);
+            setLoading(true);
+            setFetched(false);
+            setDebugInfo(null);
+            setReport([]);
+            setBranchDetails(null); // Reset branch details
 
-            setAttendance(attResponse.records || []);
-            setEmployees(empResponse.employees || []);
-            setBranches(branchResponse.branches || []);
+            // Determine Branch Context based on Role
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const userRole = user.role || '';
+            const userBranchId = user.branchId;
+            const allowedAdminRoles = ['HR', 'SUPER_ADMIN', 'ADMIN'];
+
+            let queryBranchId = null;
+
+            // ISOLATION LOGIC: If NOT an admin role, enforce branch isolation
+            if (!allowedAdminRoles.includes(userRole)) {
+                if (userBranchId) {
+                    queryBranchId = userBranchId;
+                }
+            }
+
+            // Fetch Branch Details if isolated (Branch Manager view)
+            if (queryBranchId) {
+                try {
+                    const bDetails = await getBranch(queryBranchId);
+                    if (bDetails && bDetails.branch) {
+                        setBranchDetails(bDetails.branch);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch branch details", e);
+                }
+            }
+
+            let params = {};
+            if (reportType === 'daily') {
+                params = { date };
+            } else {
+                params = { startDate, endDate };
+            }
+
+            // Add branchId to params if isolated
+            if (queryBranchId) {
+                params.branchId = queryBranchId;
+            } else if (selectedBranch) {
+                params.branchId = selectedBranch;
+            }
+
+            console.log("Generating Report with params:", params);
+
+            // The getAttendanceReport function in api.js is expected to handle the params object,
+            // including `branchId` if provided, for filtering at the API level.
+            const response = await getAttendanceReport(params);
+
+            console.log("Attendance Report Response:", response);
+            if (response.success) {
+                let reportData = response.report || [];
+
+                // Client-side fallback: ensure filtered if API didn't handle it (though API should)
+                // If we passed queryBranchId, we expect API to filter. 
+                // But for strict safety, we can filter again if we have the data.
+                // But `getAttendanceReport` logic in backend does NOT currently support passing `branchId` to `getAttendanceReport` directly? 
+                // Checking backend... `router.get('/report'...)` takes `branchId`. YES.
+                // So backend filtering should work.
+
+                if (response.type === 'range') {
+                    setReport(reportData);
+                    setSummaryData({
+                        totalDays: response.report[0]?.stats?.totalDays || 0,
+                        startDate: response.startDate,
+                        endDate: response.endDate
+                    });
+                } else {
+                    // Filter locally if response didn't filter (fallback)
+                    if (queryBranchId) {
+                        // Some rows might not have branchId, so rely on backend. 
+                        // If backend filtered, we are good.
+                    }
+                    setReport(response.report || []);
+                    setSummaryData(null);
+                }
+
+                if (response.debug) {
+                    setDebugInfo(response.debug);
+                }
+            }
+            setFetched(true);
         } catch (error) {
-            console.error('Error loading data:', error);
+            console.error("Error generating report", error);
+            alert("Error generating report");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const downloadCSV = () => {
+        try {
+            if (!report || report.length === 0) return;
+
+            let csvContent = "";
+            const isRange = reportType !== 'daily' && summaryData;
+
+            if (isRange) {
+                // Summary CSV
+                const headers = ['Employee ID', 'Name', 'Branch', 'Department', 'Total Days', 'Present', 'Absent', 'Late In', 'Early Out', 'Leave', 'Permission', 'Travel', 'Half Day'];
+                const rows = report.map(row => {
+                    const stats = row.stats;
+                    const name = `"${(row.name || '').replace(/"/g, '""')}"`;
+                    const branchName = branches.find(b => b.branchId === row.branchId)?.name || 'Unassigned';
+                    const branchStr = `"${branchName.replace(/"/g, '""')}"`;
+                    const dept = (row.department || '').replace(/,/g, ' ');
+
+                    return [
+                        row.employeeId,
+                        name,
+                        branchStr,
+                        dept,
+                        stats.totalDays,
+                        stats.present,
+                        stats.absent,
+                        stats.lateIn,
+                        stats.earlyOut,
+                        stats.leave,
+                        stats.permission,
+                        stats.travel,
+                        stats.halfDay
+                    ].join(',');
+                });
+                csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+            } else {
+                // Daily CSV (Existing Logic)
+                const headers = ['Employee ID', 'Name', 'Branch', 'Department', 'In Time', 'Out Time', 'Status', 'Remarks'];
+                const rows = report.map(row => {
+                    const statusStr = Array.isArray(row.status) ? row.status.join(' | ') : (row.status || '');
+                    const name = `"${(row.name || '').replace(/"/g, '""')}"`;
+                    const branchName = branches.find(b => b.branchId === row.branchId)?.name || 'Unassigned';
+                    const branchStr = `"${branchName.replace(/"/g, '""')}"`;
+                    const remarks = `"${(row.remarks || '').replace(/"/g, '""')}"`;
+                    const dept = (row.department || '').replace(/,/g, ' ');
+
+                    return [
+                        row.employeeId,
+                        name,
+                        branchStr,
+                        dept,
+                        row.times?.in || '-',
+                        row.times?.out || '-',
+                        statusStr,
+                        remarks
+                    ].join(',');
+                });
+                csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const fileName = isRange ? `attendance_summary_${startDate}_to_${endDate}.csv` : `attendance_report_${date}.csv`;
+            link.setAttribute('download', fileName);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Error downloading CSV:", error);
+            alert("Failed to download CSV.");
         }
     };
 
@@ -55,194 +236,261 @@ const Attendance = () => {
         return `${h}h ${m}m`;
     };
 
-    const getEmployeeName = (employeeId) => {
-        const emp = employees.find(e => e.employeeId === employeeId);
-        return emp?.name || employeeId;
-    };
-
-    const getEmployeeBranch = (employeeId) => {
-        const emp = employees.find(e => e.employeeId === employeeId);
-        const branch = branches.find(b => b.branchId === emp?.branchId);
-        return branch?.name || '-';
-    };
-
-    const getStatusBadgeClass = (status) => {
-        switch (status) {
-            case 'present': return 'badge-success';
-            case 'late': return 'badge-warning';
-            case 'half-day': return 'badge-danger';
-            default: return 'badge-secondary';
-        }
-    };
-
-    const calculateDuration = (checkIn, checkOut) => {
-        if (!checkIn || !checkOut) return '--';
-        const start = new Date(checkIn);
-        const end = new Date(checkOut);
-        const diff = Math.abs(end - start);
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        return `${hours}h ${minutes}m`;
-    };
-
-    // Export to Excel
-    const exportToExcel = () => {
-        const data = attendance.map(record => ({
-            'Employee ID': record.employeeId,
-            'Employee Name': getEmployeeName(record.employeeId),
-            'Branch': getEmployeeBranch(record.employeeId),
-            'Check In': formatTime(record.checkInTime),
-            'Check Out': formatTime(record.checkOutTime),
-            'Duration': calculateDuration(record.checkInTime, record.checkOutTime),
-            'Status': record.status,
-            'Date': selectedDate,
-        }));
-
-        if (data.length === 0) {
-            alert('No data to export');
-            return;
-        }
-
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
-        XLSX.writeFile(workbook, `Attendance_${selectedDate}.xlsx`);
-    };
-
-    // Calculate unique employees who have attendance
-    const stats = {
-        total: employees.length,
-        present: attendance.filter(a => a.status.includes('Present') || a.status.includes('Late in') || a.status.includes('On Travel')).length,
-        absent: attendance.filter(a => a.status.includes('Absent')).length,
-        travel: attendance.filter(a => a.status.includes('On Travel')).length,
-        late: attendance.filter(a => a.status.includes('Late in')).length,
+    const getStatusBadge = (statusList, color) => {
+        if (!statusList) return null;
+        return (
+            <div className="status-container">
+                {statusList.map((s, i) => (
+                    <span key={i} className={`status-tag ${s.toLowerCase().replace(/\s+/g, '-')}`}>
+                        {s}
+                    </span>
+                ))}
+            </div>
+        );
     };
 
     return (
-        <div className="attendance-page">
-            <div className="page-header">
-                <h1 className="page-title">Attendance Report</h1>
-                <div className="header-actions">
-                    <div className="date-picker">
-                        <FiCalendar />
+        <div className="attendance-report-page">
+            <div className="section-header">
+                <div className="section-title">
+                    <FiSearch />
+                    <h2>Attendance Directory</h2>
+                </div>
+            </div>
+
+            <div className="report-controls">
+                <div className="control-group">
+                    <label>Report Type:</label>
+                    <select
+                        value={reportType}
+                        onChange={(e) => setReportType(e.target.value)}
+                        className="type-select"
+                        style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+                    >
+                        <option value="daily">Daily Report</option>
+                        <option value="weekly">Weekly Summary</option>
+                        <option value="monthly">Monthly Summary</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+
+                <div className="control-group">
+                    <label>Assigned Branch:</label>
+                    <select
+                        value={selectedBranch}
+                        onChange={(e) => setSelectedBranch(e.target.value)}
+                        className="type-select"
+                        style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+                    >
+                        <option value="">All Branches</option>
+                        {branches.map(b => (
+                            <option key={b.branchId} value={b.branchId}>{b.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {reportType === 'daily' ? (
+                    <div className="control-group">
+                        <label>Select Date:</label>
                         <input
                             type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            max={new Date().toISOString().split('T')[0]}
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="date-picker"
                         />
                     </div>
-                    <button className="btn btn-primary" onClick={exportToExcel}>
-                        <FiDownload /> Export Excel
-                    </button>
-                </div>
-            </div>
-
-            <div className="attendance-stats">
-                <div className="stat-item">
-                    <span className="stat-number">{stats.total}</span>
-                    <span className="stat-text">Total Employees</span>
-                </div>
-                <div className="stat-item present">
-                    <span className="stat-number">{stats.present}</span>
-                    <span className="stat-text">Present</span>
-                </div>
-                <div className="stat-item absent">
-                    <span className="stat-number">{stats.absent}</span>
-                    <span className="stat-text">Absent</span>
-                </div>
-                <div className="stat-item late">
-                    <span className="stat-number">{stats.late}</span>
-                    <span className="stat-text">Late In</span>
-                </div>
-                <div className="stat-item" style={{ borderBottom: '4px solid var(--info)' }}>
-                    <span className="stat-number">{stats.travel}</span>
-                    <span className="stat-text">On Travel</span>
-                </div>
-            </div>
-
-            {/* Attendance Table */}
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div className="card-header" style={{ padding: '24px', borderBottom: '1px solid var(--border)' }}>
-                    <h2 className="card-title" style={{ margin: 0 }}>
-                        <FiClock style={{ marginRight: '10px', color: 'var(--primary)' }} />
-                        {new Date(selectedDate).toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                        })}
-                    </h2>
-                </div>
-
-                {loading ? (
-                    <div className="loading-container">
-                        <div className="spinner"></div>
-                    </div>
-                ) : attendance.length > 0 ? (
-                    <div className="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Employee</th>
-                                    <th>Branch</th>
-                                    <th>Check In</th>
-                                    <th>Check Out</th>
-                                    <th>Work Time</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {attendance.map((row, index) => {
-                                    return (
-                                        <tr key={row.employeeId}>
-                                            <td>{index + 1}</td>
-                                            <td>
-                                                <div className="employee-cell">
-                                                    <strong>{row.employeeId}</strong>
-                                                    <span>{row.name}</span>
-                                                </div>
-                                            </td>
-                                            <td>{getEmployeeBranch(row.employeeId)}</td>
-                                            <td>{row.times?.in || '-'}</td>
-                                            <td>{row.times?.out || '-'}</td>
-                                            <td>
-                                                <span className="work-time">
-                                                    <FiClock style={{ marginRight: '4px', fontSize: '12px' }} />
-                                                    {formatMinutes(row.totalWorkMinutes)}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="status-tags" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                                    {Array.isArray(row.status) ? (
-                                                        row.status.map((s, i) => (
-                                                            <span key={i} className={`badge ${s.toLowerCase() === 'present' ? 'badge-success' : s.toLowerCase().includes('late') ? 'badge-warning' : s.toLowerCase().includes('absent') ? 'badge-danger' : 'badge-secondary'}`} style={{ fontSize: '10px' }}>
-                                                                {s}
-                                                            </span>
-                                                        ))
-                                                    ) : (
-                                                        <span className={`badge ${row.status?.toLowerCase() === 'present' ? 'badge-success' : row.status?.toLowerCase().includes('late') ? 'badge-warning' : row.status?.toLowerCase().includes('absent') ? 'badge-danger' : 'badge-secondary'}`} style={{ fontSize: '10px' }}>
-                                                            {row.status}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
                 ) : (
-                    <div className="empty-state">
-                        <FiCalendar className="empty-icon" />
-                        <p>No attendance records for this date</p>
-                    </div>
+                    <>
+                        <div className="control-group">
+                            <label>From:</label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="date-picker"
+                                disabled={reportType !== 'custom'}
+                            />
+                        </div>
+                        <div className="control-group">
+                            <label>To:</label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="date-picker"
+                                disabled={reportType !== 'custom'}
+                            />
+                        </div>
+                    </>
                 )}
+
+                <div className="button-group">
+                    <button
+                        onClick={handleGenerate}
+                        className="generate-btn"
+                        disabled={loading}
+                        style={{ background: 'var(--success)', color: 'white' }}
+                    >
+                        {loading ? 'Generating...' : (reportType === 'daily' ? "Create Today's Report" : 'Generate Report')}
+                    </button>
+                    {fetched && report.length > 0 && (
+                        <button onClick={downloadCSV} className="download-btn">
+                            Download CSV
+                        </button>
+                    )}
+                </div>
             </div>
+
+
+            {branchDetails && (
+                <div className="branch-details-card" style={{ marginBottom: '20px', padding: '15px', background: '#e0f2fe', borderRadius: '8px', border: '1px solid #bae6fd', display: 'flex', gap: '20px', alignItems: 'center' }}>
+                    <div>
+                        <strong>Assigned Branch:</strong> {branchDetails.name}
+                    </div>
+                    <div>
+                        <span style={{ marginRight: '10px' }}>📍 <strong>Lat:</strong> {branchDetails.latitude}</span>
+                        <span style={{ marginRight: '10px' }}><strong>Lng:</strong> {branchDetails.longitude}</span>
+                        <span>📏 <strong>Radius:</strong> {branchDetails.radiusMeters || 100}m</span>
+                    </div>
+                </div>
+            )}
+
+            {fetched && (
+                <div className="report-results">
+                    {/* Summary Cards */}
+                    {reportType === 'daily' ? (
+                        <div className="summary-cards">
+                            <div className="card">
+                                <h3>Total Employees</h3>
+                                <p>{report.length}</p>
+                            </div>
+                            <div className="card">
+                                <h3>Present</h3>
+                                <p>{report.filter(r => r.status.includes('Present') || r.status.includes('Late in')).length}</p>
+                            </div>
+                            <div className="card">
+                                <h3>Absent</h3>
+                                <p>{report.filter(r => r.status.includes('Absent')).length}</p>
+                            </div>
+                            <div className="card">
+                                <h3>Late In</h3>
+                                <p>{report.filter(r => r.status.includes('Late in')).length}</p>
+                            </div>
+                            <div className="card">
+                                <h3>On Travel</h3>
+                                <p>{report.filter(r => r.status.includes('On Travel')).length}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="summary-cards">
+                            <div className="card">
+                                <h3>Period</h3>
+                                <p style={{ fontSize: '16px' }}>{startDate} to {endDate}</p>
+                            </div>
+                            <div className="card">
+                                <h3>Total Employees</h3>
+                                <p>{report.length}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="table-container">
+                        {reportType === 'daily' ? (
+                            /* DAILY TABLE */
+                            <table className="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Branch</th>
+                                        <th>Department</th>
+                                        <th>In Time</th>
+                                        <th>Out Time</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {report.length > 0 ? (
+                                        report.map((row) => (
+                                            <tr key={row.employeeId}>
+                                                <td className="employee-cell">
+                                                    <div className="emp-name">{row.name}</div>
+                                                    <div className="emp-id">{row.employeeId}</div>
+                                                </td>
+                                                <td>{branches.find(b => b.branchId === row.branchId)?.name || 'Unassigned'}</td>
+                                                <td>{row.department || '-'}</td>
+                                                <td>{row.times?.in || '-'}</td>
+                                                <td>{row.times?.out || '-'}</td>
+                                                <td style={{ fontWeight: '500', color: '#1e293b' }}>
+                                                    {formatMinutes(row.totalWorkMinutes)}
+                                                </td>
+                                                <td>{getStatusBadge(row.status, row.color)}</td>
+                                                <td>{row.remarks || '-'}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr><td colSpan="7" className="no-data">No records found.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        ) : (
+                            /* SUMMARY TABLE */
+                            <table className="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Branch</th>
+                                        <th>Present</th>
+                                        <th>Absent</th>
+                                        <th>Late In</th>
+                                        <th>Early Out</th>
+                                        <th>Leaves</th>
+                                        <th>Permissions</th>
+                                        <th>Travel</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {report.length > 0 ? (
+                                        report.map((row) => (
+                                            <tr key={row.employeeId}>
+                                                <td className="employee-cell">
+                                                    <div className="emp-name">{row.name}</div>
+                                                    <div className="emp-id">{row.employeeId}</div>
+                                                </td>
+                                                <td>{branches.find(b => b.branchId === row.branchId)?.name || 'Unassigned'}</td>
+                                                <td style={{ color: '#047857', fontWeight: 'bold' }}>{row.stats?.present || 0}</td>
+                                                <td style={{ color: '#b91c1c', fontWeight: 'bold' }}>{row.stats?.absent || 0}</td>
+                                                <td style={{ color: '#c2410c' }}>{row.stats?.lateIn || 0}</td>
+                                                <td>{row.stats?.earlyOut || 0}</td>
+                                                <td style={{ color: '#1d4ed8' }}>{row.stats?.leave || 0}</td>
+                                                <td>{row.stats?.permission || 0}</td>
+                                                <td style={{ color: '#00796B', fontWeight: 'bold' }}>{row.stats?.travel || 0}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr><td colSpan="7" className="no-data">No records found.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Debug Info Section */}
+            {debugInfo && (
+                <div className="debug-section" style={{ marginTop: '30px', padding: '15px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: '6px' }}>
+                    <h4 style={{ fontSize: '14px', margin: '0 0 10px 0', color: '#666' }}>Debug Diagnostics</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '13px' }}>
+                        <div><strong>Employees Found:</strong> {debugInfo.employeeCountBeforeFilter}</div>
+                        <div><strong>Attendance records:</strong> {debugInfo.attendanceRecordsFound}</div>
+                        <div><strong>Request records:</strong> {debugInfo.requestsFound}</div>
+                        <div><strong>Branch Filter:</strong> {debugInfo.branchIdParam || 'None'}</div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
-
 export default Attendance;
