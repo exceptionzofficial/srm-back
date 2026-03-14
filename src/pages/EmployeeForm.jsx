@@ -256,8 +256,23 @@ const EmployeeForm = () => {
             return;
         }
 
-        if (!id && formData.email && !isVerified) {
+        if (!formData.email) {
+            setError('Email is mandatory');
+            return;
+        }
+
+        if (!formData.phone) {
+            setError('Phone number is mandatory');
+            return;
+        }
+
+        if (!id && !isVerified) {
             setError('Please verify the email with OTP before creating employee');
+            return;
+        }
+
+        if (!id && !isPhoneVerified) {
+            setError('Please verify the phone number with OTP before creating employee');
             return;
         }
 
@@ -333,7 +348,7 @@ const EmployeeForm = () => {
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label"><FiMail style={{ marginRight: '6px' }} />Email</label>
+                            <label className="form-label"><FiMail style={{ marginRight: '6px' }} />Email *</label>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <input
                                     type="email"
@@ -360,7 +375,7 @@ const EmployeeForm = () => {
                             )}
                         </div>
                         <div className="form-group">
-                            <label className="form-label"><FiPhone style={{ marginRight: '6px' }} />Phone</label>
+                            <label className="form-label"><FiPhone style={{ marginRight: '6px' }} />Phone *</label>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <input
                                     type="tel"
