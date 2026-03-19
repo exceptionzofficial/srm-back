@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiPlus, FiEdit2, FiTrash2, FiUser, FiMapPin, FiSearch } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUser, FiMapPin, FiSearch, FiShield, FiSmartphone, FiMonitor } from 'react-icons/fi';
 import { getEmployees, deleteEmployee, getBranches } from '../services/api';
 import './Employees.css';
 
