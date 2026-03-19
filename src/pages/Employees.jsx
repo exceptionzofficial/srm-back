@@ -62,8 +62,17 @@ const Employees = () => {
         })
         .sort((a, b) => a.name.localeCompare(b.name));
 
-    const mobileEmployees = filteredEmployees.filter(emp => emp.employeeType !== 'kiosk');
-    const kioskEmployees = filteredEmployees.filter(emp => emp.employeeType === 'kiosk');
+    // Split based on ID prefix or platform access
+    const managerEmployees = filteredEmployees.filter(emp => emp.employeeId?.startsWith('MGR'));
+    const kioskEmployees = filteredEmployees.filter(emp => 
+        !emp.employeeId?.startsWith('MGR') && 
+        (emp.employeeId?.startsWith('SRMC') || emp.employeeType === 'kiosk')
+    );
+    const mobileEmployees = filteredEmployees.filter(emp => 
+        !emp.employeeId?.startsWith('MGR') && 
+        !emp.employeeId?.startsWith('SRMC') && 
+        emp.employeeType !== 'kiosk'
+    );
 
     if (loading) {
         return <div className="loading-container"><div className="spinner"></div></div>;
@@ -93,9 +102,90 @@ const Employees = () => {
             {success && <div className="alert alert-success">{success}</div>}
             {error && <div className="alert alert-danger">{error}</div>}
 
+            {/* Management Section */}
             <div className="section-header" style={{ marginTop: '24px' }}>
                 <h2 className="section-title">
-                    📱 Mobile App Employees
+                    <FiShield className="text-primary" /> Management Profiles
+                </h2>
+                <span className="branch-count-badge">{managerEmployees.length}</span>
+            </div>
+            <div className="card">
+                {managerEmployees.length > 0 ? (
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Branch</th>
+                                    <th>Work Mode</th>
+                                    <th>Face Status</th>
+                                    <th>Added By</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {managerEmployees.map((emp) => (
+                                    <tr key={emp.employeeId} onClick={() => navigate(`/attendance/view/${emp.employeeId}`)} style={{ cursor: 'pointer' }}>
+                                        <td><strong>{emp.employeeId}</strong></td>
+                                        <td>
+                                            <div className="employee-info">
+                                                <div className={`employee-avatar ${emp.photoUrl ? 'has-photo' : ''}`}>
+                                                    {emp.photoUrl ? <img src={emp.photoUrl} alt={emp.name} /> : <FiUser />}
+                                                </div>
+                                                <div>
+                                                    <span className="employee-name">{emp.name}</span>
+                                                    <span className="employee-email">{emp.email || emp.phone}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="branch-cell">
+                                                <FiMapPin className="branch-icon-small" />
+                                                <span>{getBranchName(emp.branchId)}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${emp.workMode === 'OFFICE' ? 'badge-secondary' : 'badge-warning'}`}>
+                                                {emp.workMode?.replace('_', ' ') || 'OFFICE'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${emp.faceId ? 'badge-success' : 'badge-warning'}`}>
+                                                {emp.faceId ? 'Registered' : 'Not Registered'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className="badge badge-secondary">
+                                                {emp.addedBy || 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${emp.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
+                                                {emp.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button className="action-btn edit" onClick={(e) => { e.stopPropagation(); navigate(`/employees/edit/${emp.employeeId}`); }}><FiEdit2 /></button>
+                                                <button className="action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(emp.employeeId); }}><FiTrash2 /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p className="empty-message">No management profiles found.</p>
+                )}
+            </div>
+
+            {/* Mobile App Employees Section */}
+            <div className="section-header" style={{ marginTop: '32px' }}>
+                <h2 className="section-title">
+                    <FiSmartphone className="text-primary" /> Mobile App Employees
                 </h2>
                 <span className="branch-count-badge">{mobileEmployees.length}</span>
             </div>
@@ -172,9 +262,10 @@ const Employees = () => {
                 )}
             </div>
 
+            {/* Kiosk / Common Employees Section */}
             <div className="section-header" style={{ marginTop: '32px' }}>
                 <h2 className="section-title">
-                    🖥️ Kiosk / Common Employees
+                    <FiMonitor className="text-primary" /> Kiosk / Common Employees
                 </h2>
                 <span className="branch-count-badge">{kioskEmployees.length}</span>
             </div>
