@@ -26,7 +26,8 @@ const Managers = () => {
             ]);
 
             const managersList = (empRes.employees || []).filter(e =>
-                ['BRANCH_MANAGER', 'CLUSTER_MANAGER', 'RETAIL_MANAGER', 'HR_ADMIN', 'FINANCE_ADMIN', 'LEGAL_ADMIN', 'PRODUCTION_ADMIN', 'QUALITY_ADMIN'].includes(e.role)
+                e.employeeId?.startsWith('MGR') ||
+                ['BRANCH_MANAGER', 'CLUSTER_MANAGER', 'RETAIL_MANAGER', 'HR_ADMIN', 'FINANCE_ADMIN', 'LEGAL_ADMIN', 'PRODUCTION_ADMIN', 'QUALITY_ADMIN', 'MANAGER'].includes(e.role)
             );
             setManagers(managersList);
             setBranches(branchRes.branches || []);

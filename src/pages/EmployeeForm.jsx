@@ -59,6 +59,14 @@ const EmployeeForm = () => {
     });
     const [photoFile, setPhotoFile] = useState(null);
     const [photoPreview, setPhotoPreview] = useState(null);
+    const [docFiles, setDocFiles] = useState({
+        aadhar: null,
+        pan: null,
+        license: null,
+        bankpassbook: null,
+        degreecertificate: null,
+        payslip: null
+    });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
@@ -160,6 +168,13 @@ const EmployeeForm = () => {
                 setPhotoPreview(reader.result);
             };
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleFileChange = (field, e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setDocFiles(prev => ({ ...prev, [field]: file }));
         }
     };
 
@@ -275,20 +290,35 @@ const EmployeeForm = () => {
             setError('Please verify the phone number with OTP before creating employee');
             return;
         }
-
         try {
             let dataToSend;
-            if (photoFile) {
+            const hasFiles = Object.values(docFiles).some(f => f !== null);
+
+            if (hasFiles) {
                 dataToSend = new FormData();
                 Object.entries(formData).forEach(([key, value]) => {
                     if (value !== null && value !== undefined) {
-                        dataToSend.append(key, value);
+                        if (key === 'photoUrl' || key === 'photo') return; // Skip photo
+                        if (typeof value === 'object' && key !== 'documents') {
+                            dataToSend.append(key, JSON.stringify(value));
+                        } else if (key !== 'documents') {
+                            dataToSend.append(key, value);
+                        }
                     }
                 });
-                dataToSend.append('photo', photoFile);
+                if (docFiles.aadhar) dataToSend.append('doc_aadhar', docFiles.aadhar);
+                if (docFiles.pan) dataToSend.append('doc_pan', docFiles.pan);
+                if (docFiles.license) dataToSend.append('doc_license', docFiles.license);
+                if (docFiles.bankpassbook) dataToSend.append('doc_bankpassbook', docFiles.bankpassbook);
+                if (docFiles.degreecertificate) dataToSend.append('doc_degreecertificate', docFiles.degreecertificate);
+                if (docFiles.payslip) dataToSend.append('doc_payslip', docFiles.payslip);
+
                 if (!id) dataToSend.append('addedBy', 'Super Admin');
             } else {
-                dataToSend = { ...formData, addedBy: 'Super Admin' };
+                const filteredData = { ...formData };
+                delete filteredData.photoUrl;
+                delete filteredData.photo;
+                dataToSend = { ...filteredData, addedBy: 'Super Admin' };
             }
 
             if (id) {
@@ -450,47 +480,32 @@ const EmployeeForm = () => {
                         </div>
                     </div>
 
-                    <div className="form-group" style={{ marginBottom: '32px' }}>
-                        <label className="form-label">Employee Photo</label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            {photoPreview ? (
-                                <div style={{ position: 'relative', width: '100px', height: '100px' }}>
-                                    <img src={photoPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
-                                    <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }} style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#ff4444', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer' }}>×</button>
-                                </div>
-                            ) : (
-                                <label style={{ width: '100px', height: '100px', border: '2px dashed #ddd', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                                    <FiUpload /> <span style={{ fontSize: '12px' }}>Upload</span>
-                                    <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
-                                </label>
-                            )}
-                        </div>
-                    </div>
+                    {/* Secondary Employee Photo section removed to avoid redundancy and per user request */}
 
                     {/* Documents Section */}
                     <h4 style={{ color: 'var(--primary)', fontSize: '14px', marginBottom: '20px', textTransform: 'uppercase', borderTop: '1px solid #eee', paddingTop: '32px' }}>Employee Documents</h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '32px' }}>
                         {[
-                            { label: 'Aadhar Card', url: formData.documents?.aadharUrl },
-                            { label: 'PAN Card', url: formData.documents?.panUrl },
-                            { label: 'Marksheet', url: formData.documents?.marksheetUrl },
-                            { label: 'License', url: formData.documents?.licenseUrl }
+                            { label: 'Aadhar Card', key: 'aadhar', url: formData.documents?.aadharUrl },
+                            { label: 'PAN Card', key: 'pan', url: formData.documents?.panUrl },
+                            { label: 'Driving License', key: 'license', url: formData.documents?.licenseUrl },
+                            { label: 'Bank Passbook', key: 'bankpassbook', url: formData.documents?.bankPassbookUrl },
+                            { label: 'Degree / Payslip', key: 'degreecertificate', url: formData.documents?.degreeCertificateUrl || formData.documents?.payslipUrl }
                         ].map((doc, idx) => (
                             <div className="form-group" key={idx}>
                                 <label className="form-label">{doc.label}</label>
-                                {doc.url ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                                {doc.url && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd', marginBottom: '8px' }}>
                                         <FiCheck color="#0284c7" />
                                         <span style={{ fontSize: '13px', color: '#0369a1', fontWeight: 500 }}>Uploaded</span>
                                         <a href={doc.url} target="_blank" rel="noreferrer" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#0284c7', textDecoration: 'none', fontWeight: 600 }}>
                                             View <FiExternalLink size={14} />
                                         </a>
                                     </div>
-                                ) : (
-                                    <div style={{ padding: '10px', background: '#fff1f2', borderRadius: '6px', border: '1px solid #fecdd3', color: '#e11d48', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <div style={{ width: 6, height: 6, background: '#e11d48', borderRadius: '50%' }}></div> Not Uploaded
-                                    </div>
                                 )}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {!id && <input type="file" onChange={(e) => handleFileChange(doc.key, e)} style={{ fontSize: '12px' }} />}
+                                </div>
                             </div>
                         ))}
                     </div>

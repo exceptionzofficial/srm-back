@@ -4,10 +4,12 @@
 
 import axios from 'axios';
 
-// API Base URL - Production
-// API Base URL - Production
-// In development, we use relative path to trigger the Vite proxy (bypassing CORS)
-const API_BASE_URL = import.meta.env.DEV ? '' : 'https://srm-backend-lake.vercel.app';
+// API Base URL
+// In development, we use an empty string to trigger the Vite proxy (defined in vite.config.js)
+// In production, we point directly to the Vercel backend
+const API_BASE_URL = import.meta.env.MODE === 'production' 
+    ? 'https://srm-backend-lake.vercel.app' 
+    : '';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -64,6 +66,23 @@ export const updateEmployee = async (employeeId, updates) => {
 
 export const deleteEmployee = async (employeeId) => {
     const response = await api.delete(`/api/employees/${employeeId}`);
+    return response.data;
+};
+
+// ==================== DESIGNATION ENDPOINTS ====================
+
+export const getDesignations = async () => {
+    const response = await api.get('/api/designations');
+    return response.data;
+};
+
+export const createDesignation = async (data) => {
+    const response = await api.post('/api/designations', data);
+    return response.data;
+};
+
+export const deleteDesignation = async (id) => {
+    const response = await api.delete(`/api/designations/${id}`);
     return response.data;
 };
 

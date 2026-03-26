@@ -6,7 +6,7 @@ import {
 } from 'react-icons/fi';
 import {
     getEmployees, createEmployee, updateEmployee, getBranches, getPayGroups,
-    sendOTP, verifyOTP, sendSMSOTP, verifySMSOTP
+    sendOTP, verifyOTP, sendSMSOTP, verifySMSOTP, getDesignations
 } from '../services/api';
 
 const EmployeeWizard = () => {
@@ -29,6 +29,7 @@ const EmployeeWizard = () => {
     const [loading, setLoading] = useState(false);
     const [branches, setBranches] = useState([]);
     const [payGroups, setPayGroups] = useState([]);
+    const [designationsList, setDesignationsList] = useState([]);
 
     // Form Data State - flat structure for ease, mapped to nested on submit
     const [formData, setFormData] = useState({
@@ -128,13 +129,15 @@ const EmployeeWizard = () => {
     const loadInitialData = async () => {
         setLoading(true);
         try {
-            const [branchRes, payGroupRes] = await Promise.all([
+            const [branchRes, payGroupRes, designationRes] = await Promise.all([
                 getBranches().catch(() => ({ branches: [] })),
-                getPayGroups().catch(() => ({ payGroups: [] }))
+                getPayGroups().catch(() => ({ payGroups: [] })),
+                getDesignations().catch(() => ({ designations: [] }))
             ]);
 
             setBranches(branchRes.branches || []);
             setPayGroups(payGroupRes.payGroups || []);
+            setDesignationsList(designationRes.designations || []);
 
             // If Edit Mode - Populate Data (Mapping nested back to flat)
             if (id) {
@@ -285,7 +288,7 @@ const EmployeeWizard = () => {
             } else {
                 await createEmployee(payload); // Or FormData if multipart supported
             }
-            navigate('/employees');
+            navigate('/master/list');
         } catch (err) {
             alert('Error saving employee: ' + err.message);
             setLoading(false);
@@ -516,7 +519,10 @@ const EmployeeWizard = () => {
 
                         <div className="form-group">
                             <label className="label">Designation</label>
-                            <input type="text" className="input" value={formData.designation} onChange={e => handleChange('designation', e.target.value)} />
+                            <select className="input" value={formData.designation} onChange={e => handleChange('designation', e.target.value)}>
+                                <option value="">Select Designation</option>
+                                {designationsList.map(d => <option key={d.designationId} value={d.name}>{d.name}</option>)}
+                            </select>
                         </div>
                         <div className="form-group">
                             <label className="label">Nature of Work</label>

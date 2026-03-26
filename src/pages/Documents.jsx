@@ -8,11 +8,11 @@ import { getEmployees, getBranches, updateEmployee } from '../services/api';
 import './Documents.css';
 
 const DOCUMENT_LABELS = {
-    photoUrl: { label: 'Photo', Icon: FiCamera, field: 'photo' },
     aadharUrl: { label: 'Aadhar Card', Icon: FiCreditCard, field: 'doc_aadhar' },
     panUrl: { label: 'PAN Card', Icon: FiCreditCard, field: 'doc_pan' },
-    marksheetUrl: { label: 'Marksheet', Icon: FiBookOpen, field: 'doc_marksheet' },
-    licenseUrl: { label: 'License', Icon: FiFile, field: 'doc_license' },
+    licenseUrl: { label: 'Driving License', Icon: FiFile, field: 'doc_license' },
+    bankPassbookUrl: { label: 'Bank Passbook', Icon: FiCreditCard, field: 'doc_bankpassbook' },
+    degreeCertificateUrl: { label: 'Degree / Payslip', Icon: FiBookOpen, field: 'doc_degreecertificate' },
 };
 
 const Documents = () => {

@@ -63,13 +63,21 @@ body {
 .main-content {
   flex: 1;
   min-width: 0;
-  padding: 24px 32px;
+  padding: 0;
   transition: var(--transition);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg-main);
+  display: flex;
+  flex-direction: column;
+}
+
+.page-body {
+  flex: 1;
+  padding: 24px 32px;
+  overflow-y: auto;
 }
 
 /* Cards */

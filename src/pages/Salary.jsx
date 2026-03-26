@@ -1,7 +1,10 @@
-
-import { useState, useEffect } from 'react';
-import { FiPlus, FiUser, FiEdit2, FiSearch } from 'react-icons/fi';
-import { getEmployees, createSalary, getSalaries, updateSalary, calculateSalary } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { FiPlus, FiUser, FiEdit2, FiSearch, FiFilter, FiCreditCard } from 'react-icons/fi';
+import { 
+    getEmployees, createSalary, getSalaries, updateSalary, calculateSalary,
+    getBranches, getPayGroups, getDesignations
+} from '../services/api';
+import './Salary.css';
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -10,6 +13,8 @@ const months = [
 
 const Salary = () => {
     const [employees, setEmployees] = useState([]);
+    const [branches, setBranches] = useState([]);
+    const [payGroups, setPayGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [employeeSalaries, setEmployeeSalaries] = useState([]);
@@ -17,6 +22,9 @@ const Salary = () => {
 
     const [editingSalary, setEditingSalary] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedBranch, setSelectedBranch] = useState('All');
+    const [selectedPaygroup, setSelectedPaygroup] = useState('All');
+    const [roleFilter, setRoleFilter] = useState('All'); // All, Employee, Manager
 
     // Form State
     const [formData, setFormData] = useState({
@@ -48,15 +56,24 @@ const Salary = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        loadEmployees();
+        loadData();
     }, []);
 
-    const loadEmployees = async () => {
+    const loadData = async () => {
+        setLoading(true);
         try {
-            const data = await getEmployees();
-            setEmployees(data.employees || []);
+            const [empData, branchData, pgData] = await Promise.all([
+                getEmployees(),
+                getBranches(),
+                getPayGroups()
+            ]);
+            setEmployees(empData.employees || empData || []);
+            setBranches(branchData.branches || branchData || []);
+            setPayGroups(pgData.payGroups || pgData || []);
+            // Always default to 'All' for maximum visibility
+            setSelectedBranch('All');
         } catch (error) {
-            console.error('Error loading employees:', error);
+            console.error('Error loading data:', error);
         } finally {
             setLoading(false);
         }
@@ -252,15 +269,39 @@ const Salary = () => {
         fetchAutoDeductions(initialForm.month, initialForm.year);
     };
 
-    // Role Filtering
-    const [selectedRole, setSelectedRole] = useState('All');
-    const roles = ['All', ...new Set(employees.map(emp => emp.designation).filter(Boolean))].sort();
+    const getBranchName = (id) => {
+        const b = branches.find(b => b.branchId === id);
+        return b ? b.name : id || 'N/A';
+    };
+
+    const isManager = (emp) => {
+        const isMgrId = emp.employeeId?.startsWith('MGR');
+        const hasMgrRole = ['BRANCH_MANAGER', 'CLUSTER_MANAGER', 'RETAIL_MANAGER', 'HR_ADMIN', 'FINANCE_ADMIN', 'LEGAL_ADMIN', 'PRODUCTION_ADMIN', 'QUALITY_ADMIN', 'MANAGER'].includes(emp.role);
+        
+        if (isMgrId || hasMgrRole) return true;
+        
+        if (!emp.designation) return false;
+        const d = emp.designation.toLowerCase();
+        return (
+            d.includes('manager') || d.includes('lead') || d.includes('head') || 
+            d.includes('chief') || d.includes('director') || d.includes('admin') ||
+            d.includes('supervisor')
+        );
+    };
 
     const filteredEmployees = employees.filter(emp => {
-        const matchesSearch = emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const matchesSearch = 
+            emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesRole = selectedRole === 'All' || emp.designation === selectedRole;
-        return matchesSearch && matchesRole;
+        
+        const matchesBranch = selectedBranch === 'All' || emp.branchId === selectedBranch;
+        const matchesPaygroup = selectedPaygroup === 'All' || emp.payGroup === selectedPaygroup;
+        
+        let matchesRole = true;
+        if (roleFilter === 'Manager') matchesRole = isManager(emp);
+        else if (roleFilter === 'Employee') matchesRole = !isManager(emp);
+
+        return matchesSearch && matchesBranch && matchesPaygroup && matchesRole;
     });
 
     if (loading) return (
@@ -272,81 +313,115 @@ const Salary = () => {
     // View: List Employees
     if (!selectedEmployee) {
         return (
-            <div className="salary-page">
-                <div className="page-header">
-                    <h1 className="page-title">Salary Management</h1>
-                    <div className="header-actions">
-                        {/* Role Filter */}
-                        <select
-                            className="form-input"
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value)}
-                            style={{ width: '200px' }}
+            <div className="salary-page fade-in">
+                <div className="section-header">
+                    <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <FiCreditCard size={24} color="var(--primary)" />
+                        <h1 className="page-title" style={{ margin: 0 }}>Salary Management</h1>
+                    </div>
+                </div>
+
+                <div className="filter-bar">
+                    <div className="filter-group">
+                        <label><FiFilter /> Branch</label>
+                        <select 
+                            value={selectedBranch} 
+                            onChange={(e) => setSelectedBranch(e.target.value)}
+                        >
+                            <option value="All">All Branches</option>
+                            {branches.map(b => <option key={b.branchId} value={b.branchId}>{b.name}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label>Pay Group</label>
+                        <select 
+                            value={selectedPaygroup} 
+                            onChange={(e) => setSelectedPaygroup(e.target.value)}
+                        >
+                            <option value="All">All Paygroups</option>
+                            {payGroups.map(pg => <option key={pg.id || pg.name} value={pg.id || pg.name}>{pg.name}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label>Role</label>
+                        <select 
+                            value={roleFilter} 
+                            onChange={(e) => setRoleFilter(e.target.value)}
                         >
                             <option value="All">All Roles</option>
-                            {roles.map(role => (
-                                <option key={role} value={role}>{role}</option>
-                            ))}
+                            <option value="Employee">Employees</option>
+                            <option value="Manager">Managers</option>
                         </select>
+                    </div>
 
-                        {/* Search Bar */}
-                        <div className="card" style={{ padding: '8px', minWidth: '300px' }}>
-                            <div style={{ position: 'relative' }}>
-                                <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    placeholder="Search by name or ID..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    style={{ paddingLeft: '36px', border: 'none', background: 'transparent' }}
-                                />
-                            </div>
+                    <div className="filter-group search-box">
+                        <label>Search</label>
+                        <div className="search-input-wrapper">
+                            <FiSearch className="search-icon" />
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search by name or ID..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
                     </div>
                 </div>
 
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <div className="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Employee</th>
-                                    <th>Employee ID</th>
-                                    <th>Designation</th>
-                                    <th>Branch</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredEmployees.map(emp => (
-                                    <tr key={emp.employeeId}>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                                                    <FiUser size={16} />
-                                                </div>
-                                                <span style={{ fontWeight: 600 }}>{emp.name}</span>
-                                            </div>
-                                        </td>
-                                        <td><code>{emp.employeeId}</code></td>
-                                        <td>
-                                            <span className="badge badge-secondary">{emp.designation || 'Staff'}</span>
-                                        </td>
-                                        <td>{emp.branchId || <span className="text-secondary">N/A</span>}</td>
-                                        <td>
-                                            <button
-                                                className="btn btn-secondary btn-sm"
-                                                onClick={() => handleEmployeeSelect(emp)}
-                                            >
-                                                Manage Salary
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <div className="salary-stats-overview" style={{ marginBottom: '16px' }}>
+                    <div className="stat-mini-pill" style={{ 
+                        display: 'inline-flex', alignItems: 'center', gap: '8px', 
+                        background: 'var(--primary-light)', padding: '6px 12px', borderRadius: '20px',
+                        border: '1px solid var(--primary)', color: 'var(--primary)', fontSize: '12px', fontWeight: '600'
+                    }}>
+                        <span className="label">Showing:</span>
+                        <span className="value">{filteredEmployees.length} Employees</span>
                     </div>
+                </div>
+
+                <div className="employee-cards-grid">
+                    {filteredEmployees.map(emp => (
+                        <div key={emp.employeeId}
+                            className="employee-salary-card"
+                            onClick={() => handleEmployeeSelect(emp)}
+                        >
+                            <div className="employee-card-header">
+                                <div className="avatar-ring">
+                                    <FiUser size={20} />
+                                </div>
+                                <div className="employee-info">
+                                    <h3>{emp.name}</h3>
+                                    <p>{emp.designation || 'Staff Member'}</p>
+                                </div>
+                            </div>
+
+                            <div className="employee-card-details">
+                                <div className="detail-row">
+                                    <span className="detail-label">Employee ID</span>
+                                    <span className="detail-value">
+                                        <span className="id-badge">{emp.employeeId}</span>
+                                    </span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Branch</span>
+                                    <span className="detail-value">
+                                        <span className="branch-badge">{getBranchName(emp.branchId)}</span>
+                                    </span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Pay Group</span>
+                                    <span className="detail-value">{emp.payGroup || 'N/A'}</span>
+                                </div>
+                            </div>
+
+                            <button className="btn btn-secondary manage-salary-btn">
+                                Manage Salary
+                            </button>
+                        </div>
+                    ))}
                 </div>
             </div>
         );

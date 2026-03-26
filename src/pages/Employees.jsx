@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiPlus, FiEdit2, FiTrash2, FiUser, FiMapPin, FiSearch, FiShield, FiSmartphone, FiMonitor } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUser, FiMapPin, FiSearch, FiShield, FiSmartphone, FiMonitor, FiLogOut } from 'react-icons/fi';
 import { getEmployees, deleteEmployee, getBranches } from '../services/api';
 import './Employees.css';
 
@@ -34,8 +34,21 @@ const Employees = () => {
         }
     };
 
+    const handleRelieve = async (employeeId) => {
+        if (!confirm('Are you sure you want to mark this employee as relieved? They will be moved to the Relieved Employees list.')) return;
+        try {
+            const { updateEmployee } = await import('../services/api');
+            await updateEmployee(employeeId, { status: 'relieved' });
+            setSuccess('Employee marked as relieved successfully');
+            loadData();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (error) {
+            setError(error.response?.data?.message || 'Error relieving employee');
+        }
+    };
+
     const handleDelete = async (employeeId) => {
-        if (!confirm('Are you sure you want to delete this employee?')) return;
+        if (!confirm('Are you sure you want to delete this employee? This action is permanent.')) return;
         try {
             await deleteEmployee(employeeId);
             setSuccess('Employee deleted successfully');
@@ -53,6 +66,7 @@ const Employees = () => {
 
     const filteredEmployees = employees
         .filter(emp => {
+            if (emp.status === 'relieved') return false; // Hide relieved employees
             const searchLower = searchTerm.toLowerCase();
             return (
                 emp.name?.toLowerCase().includes(searchLower) ||
@@ -60,16 +74,19 @@ const Employees = () => {
                 emp.associateCode?.toLowerCase().includes(searchLower)
             );
         })
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    // Split based on ID prefix or platform access
-    const managerEmployees = filteredEmployees.filter(emp => emp.employeeId?.startsWith('MGR'));
+    // Unified Manager Definition
+    const isManager = (emp) => 
+        emp.employeeId?.startsWith('MGR') || 
+        ['BRANCH_MANAGER', 'CLUSTER_MANAGER', 'RETAIL_MANAGER', 'HR_ADMIN', 'FINANCE_ADMIN', 'LEGAL_ADMIN', 'PRODUCTION_ADMIN', 'QUALITY_ADMIN', 'MANAGER'].includes(emp.role);
+
     const kioskEmployees = filteredEmployees.filter(emp => 
-        !emp.employeeId?.startsWith('MGR') && 
+        !isManager(emp) && 
         (emp.employeeId?.startsWith('SRMC') || emp.employeeType === 'kiosk')
     );
     const mobileEmployees = filteredEmployees.filter(emp => 
-        !emp.employeeId?.startsWith('MGR') && 
+        !isManager(emp) && 
         !emp.employeeId?.startsWith('SRMC') && 
         emp.employeeType !== 'kiosk'
     );
@@ -93,94 +110,13 @@ const Employees = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <button className="btn btn-primary" onClick={() => navigate('/employees/add')}>
-                        <FiPlus /> Add Employee
-                    </button>
                 </div>
             </div>
 
             {success && <div className="alert alert-success">{success}</div>}
             {error && <div className="alert alert-danger">{error}</div>}
 
-            {/* Management Section */}
-            <div className="section-header" style={{ marginTop: '24px' }}>
-                <h2 className="section-title">
-                    <FiShield className="text-primary" /> Management Profiles
-                </h2>
-                <span className="branch-count-badge">{managerEmployees.length}</span>
-            </div>
-            <div className="card">
-                {managerEmployees.length > 0 ? (
-                    <div className="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Employee ID</th>
-                                    <th>Name</th>
-                                    <th>Branch</th>
-                                    <th>Work Mode</th>
-                                    <th>Face Status</th>
-                                    <th>Added By</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {managerEmployees.map((emp) => (
-                                    <tr key={emp.employeeId} onClick={() => navigate(`/attendance/view/${emp.employeeId}`)} style={{ cursor: 'pointer' }}>
-                                        <td><strong>{emp.employeeId}</strong></td>
-                                        <td>
-                                            <div className="employee-info">
-                                                <div className={`employee-avatar ${emp.photoUrl ? 'has-photo' : ''}`}>
-                                                    {emp.photoUrl ? <img src={emp.photoUrl} alt={emp.name} /> : <FiUser />}
-                                                </div>
-                                                <div>
-                                                    <span className="employee-name">{emp.name}</span>
-                                                    <span className="employee-email">{emp.email || emp.phone}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="branch-cell">
-                                                <FiMapPin className="branch-icon-small" />
-                                                <span>{getBranchName(emp.branchId)}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${emp.workMode === 'OFFICE' ? 'badge-secondary' : 'badge-warning'}`}>
-                                                {emp.workMode?.replace('_', ' ') || 'OFFICE'}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${emp.faceId ? 'badge-success' : 'badge-warning'}`}>
-                                                {emp.faceId ? 'Registered' : 'Not Registered'}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className="badge badge-secondary">
-                                                {emp.addedBy || 'N/A'}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${emp.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
-                                                {emp.status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div className="action-buttons">
-                                                <button className="action-btn edit" onClick={(e) => { e.stopPropagation(); navigate(`/employees/edit/${emp.employeeId}`); }}><FiEdit2 /></button>
-                                                <button className="action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(emp.employeeId); }}><FiTrash2 /></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <p className="empty-message">No management profiles found.</p>
-                )}
-            </div>
+
 
             {/* Mobile App Employees Section */}
             <div className="section-header" style={{ marginTop: '32px' }}>
@@ -248,8 +184,9 @@ const Employees = () => {
                                         </td>
                                         <td>
                                             <div className="action-buttons">
-                                                <button className="action-btn edit" onClick={(e) => { e.stopPropagation(); navigate(`/employees/edit/${emp.employeeId}`); }}><FiEdit2 /></button>
-                                                <button className="action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(emp.employeeId); }}><FiTrash2 /></button>
+                                                <button title="Edit" className="action-btn edit" onClick={(e) => { e.stopPropagation(); navigate(`/master/edit/${emp.employeeId}`); }}><FiEdit2 /></button>
+                                                <button title="Relieve" className="action-btn relieve" style={{ color: '#f59e0b' }} onClick={(e) => { e.stopPropagation(); handleRelieve(emp.employeeId); }}><FiLogOut /></button>
+                                                <button title="Delete" className="action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(emp.employeeId); }}><FiTrash2 /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -321,8 +258,9 @@ const Employees = () => {
                                         </td>
                                         <td>
                                             <div className="action-buttons">
-                                                <button className="action-btn edit" onClick={(e) => { e.stopPropagation(); navigate(`/employees/edit/${emp.employeeId}`); }}><FiEdit2 /></button>
-                                                <button className="action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(emp.employeeId); }}><FiTrash2 /></button>
+                                                <button title="Edit" className="action-btn edit" onClick={(e) => { e.stopPropagation(); navigate(`/master/edit/${emp.employeeId}`); }}><FiEdit2 /></button>
+                                                <button title="Relieve" className="action-btn relieve" style={{ color: '#f59e0b' }} onClick={(e) => { e.stopPropagation(); handleRelieve(emp.employeeId); }}><FiLogOut /></button>
+                                                <button title="Delete" className="action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(emp.employeeId); }}><FiTrash2 /></button>
                                             </div>
                                         </td>
                                     </tr>
