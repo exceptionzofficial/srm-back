@@ -30,6 +30,9 @@ const EmployeeWizard = () => {
     const [branches, setBranches] = useState([]);
     const [payGroups, setPayGroups] = useState([]);
     const [designationsList, setDesignationsList] = useState([]);
+    const [employeesList, setEmployeesList] = useState([]);
+    const [refSearchTerm, setRefSearchTerm] = useState('');
+    const [showRefDropdown, setShowRefDropdown] = useState(false);
 
     // Form Data State - flat structure for ease, mapped to nested on submit
     const [formData, setFormData] = useState({
@@ -57,6 +60,8 @@ const EmployeeWizard = () => {
         employeeType: 'full-time',
         joinedDate: '',
         residenceLocation: '',
+        referredBy: '',
+        referralRelation: '',
 
         // Statutory
         isPfEligible: false,
@@ -129,20 +134,21 @@ const EmployeeWizard = () => {
     const loadInitialData = async () => {
         setLoading(true);
         try {
-            const [branchRes, payGroupRes, designationRes] = await Promise.all([
+            const [branchRes, payGroupRes, designationRes, empResAll] = await Promise.all([
                 getBranches().catch(() => ({ branches: [] })),
                 getPayGroups().catch(() => ({ payGroups: [] })),
-                getDesignations().catch(() => ({ designations: [] }))
+                getDesignations().catch(() => ({ designations: [] })),
+                getEmployees().catch(() => ({ employees: [] }))
             ]);
 
             setBranches(branchRes.branches || []);
             setPayGroups(payGroupRes.payGroups || []);
             setDesignationsList(designationRes.designations || []);
+            setEmployeesList(empResAll.employees || []);
 
             // If Edit Mode - Populate Data (Mapping nested back to flat)
             if (id) {
-                const empRes = await getEmployees();
-                const emp = empRes.employees?.find(e => e.employeeId === id.toUpperCase());
+                const emp = empResAll.employees?.find(e => e.employeeId === id.toUpperCase());
                 if (emp) {
                     // Populate state... (Simplified for brevity, would handle mapping here)
                     setFormData(prev => ({
@@ -161,6 +167,8 @@ const EmployeeWizard = () => {
                         aadharNumber: emp.statutoryDetails?.aadharNumber || emp.aadharNumber || '',
                         pfNumber: emp.statutoryDetails?.pfNumber || '',
                         esiNumber: emp.statutoryDetails?.esiNumber || '',
+                        referredBy: emp.referredBy || '',
+                        referralRelation: emp.referralRelation || '',
 
                         // Arrays (State only holds flat fields for wizard, arrays are constructed on submit)
                         // If we need to populate 'degree', 'college' etc from the first item of array:
@@ -176,6 +184,10 @@ const EmployeeWizard = () => {
                         expYears: emp.experienceDetails?.[0]?.yearsExp || '',
                         expCtc: emp.experienceDetails?.[0]?.ctc || ''
                     }));
+                    if (emp.referredBy) {
+                        const rEmp = empResAll.employees?.find(ex => ex.employeeId === emp.referredBy);
+                        if (rEmp) setRefSearchTerm(`${rEmp.name} (${rEmp.employeeId})`);
+                    }
                 }
             }
         } catch (err) {
@@ -584,6 +596,61 @@ const EmployeeWizard = () => {
                         <div className="form-group md:col-span-2">
                             <label className="label">Residence Location (House)</label>
                             <textarea className="input" rows="2" value={formData.residenceLocation} onChange={e => handleChange('residenceLocation', e.target.value)} placeholder="Enter full address or coordinates" />
+                        </div>
+                        <div className="col-span-full border-t pt-4 mt-2">
+                           <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">Referral Information</h3>
+                        </div>
+                        <div className="form-group relative">
+                             <label className="label">Referred By</label>
+                             <input 
+                                 type="text" 
+                                 className="input" 
+                                 placeholder="Search employee..." 
+                                 value={refSearchTerm}
+                                 onChange={e => {
+                                     setRefSearchTerm(e.target.value);
+                                     setShowRefDropdown(true);
+                                 }}
+                                 onFocus={() => {
+                                     setShowRefDropdown(true);
+                                     if(refSearchTerm === 'None / Self') setRefSearchTerm('');
+                                 }}
+                                 onBlur={() => setTimeout(() => setShowRefDropdown(false), 200)}
+                             />
+                             {showRefDropdown && (
+                                 <div className="absolute z-10 w-full bg-white border border-gray-200 mt-1 rounded-md shadow-lg max-h-48 overflow-y-auto" style={{ top: '100%' }}>
+                                     <div 
+                                         className="p-3 hover:bg-gray-100 cursor-pointer text-sm font-medium border-b"
+                                         onClick={() => {
+                                             handleChange('referredBy', '');
+                                             setRefSearchTerm('None / Self');
+                                             setShowRefDropdown(false);
+                                         }}
+                                     >
+                                         None / Self
+                                     </div>
+                                     {employeesList
+                                         .filter(e => e.role === 'EMPLOYEE')
+                                         .filter(e => e.name?.toLowerCase().includes(refSearchTerm.toLowerCase()) || e.employeeId?.toLowerCase().includes(refSearchTerm.toLowerCase()))
+                                         .map(e => (
+                                         <div 
+                                             key={e.employeeId} 
+                                             className="p-3 hover:bg-gray-100 cursor-pointer text-sm border-b last:border-0"
+                                             onClick={() => {
+                                                 handleChange('referredBy', e.employeeId);
+                                                 setRefSearchTerm(`${e.name} (${e.employeeId})`);
+                                                 setShowRefDropdown(false);
+                                             }}
+                                         >
+                                             {e.name} ({e.employeeId})
+                                         </div>
+                                     ))}
+                                 </div>
+                             )}
+                        </div>
+                        <div className="form-group">
+                             <label className="label">Relation to Employee</label>
+                             <input type="text" className="input" value={formData.referralRelation} onChange={e => handleChange('referralRelation', e.target.value)} placeholder="e.g. Friend, Relative, Colleague" />
                         </div>
                     </div>
                 )}

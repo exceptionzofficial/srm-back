@@ -26,7 +26,8 @@ import {
     FiPlusCircle,
     FiAlertCircle,
     FiClock,
-    FiUserMinus
+    FiUserMinus,
+    FiGitBranch
 } from 'react-icons/fi';
 import './Sidebar.css';
 import srmLogo from '../assets/srm-logo.png';
@@ -76,7 +77,8 @@ const Sidebar = ({ userRole, isOpen = true }) => {
                     { path: '/master/stats', label: 'Statistics', icon: <FiBarChart2 /> },
                     { path: '/master/designations', label: 'Add Designation', icon: <FiPlusCircle /> },
                     { path: '/master/pay-groups', label: 'Pay Groups', icon: <FiLayers /> },
-                    { path: '/master/relieved', label: 'Relieved Employees', icon: <FiUserMinus /> }
+                    { path: '/master/relieved', label: 'Relieved Employees', icon: <FiUserMinus /> },
+                    { path: '/master/referrals', label: 'Referral Tree', icon: <FiGitBranch /> }
                 ]
             },
             { path: '/branches', icon: <FiMapPin />, label: 'Branches' },

@@ -25,6 +25,7 @@ import AdvancePermits from './pages/AdvancePermits';
 import EmployeeRules from './pages/EmployeeRules';
 import ChatGroups from './pages/ChatGroups';
 import PayGroups from './pages/PayGroups';
+import Referrals from './pages/Referrals';
 import LegalDashboard from './pages/roles/LegalDashboard';
 import FinanceDashboard from './pages/roles/FinanceDashboard';
 import BranchManagerDashboard from './pages/roles/BranchManagerDashboard';
@@ -110,6 +111,7 @@ function App() {
                 <Route path="designations" element={<DesignationManager />} />
                 <Route path="pay-groups" element={<PayGroups />} />
                 <Route path="relieved" element={<RelievedEmployees />} />
+                <Route path="referrals" element={<Referrals />} />
               </Route>
 
                <Route path="/branches" element={<Branches />} />
